@@ -1,3 +1,7 @@
+# WEIGHTS
+weights/yolov3.weights
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
