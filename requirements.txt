@@ -1,0 +1,5 @@
+#This file is used to automatically download the required packages
+opencv-python
+tensorflow
+ultralytics
+numpy
