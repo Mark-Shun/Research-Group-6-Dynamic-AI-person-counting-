@@ -245,8 +245,8 @@ def run(
                     for j, (output) in enumerate(outputs[i]):
 
                         if save_seg:
-                            masksReshape = np.repeat(masks[i].numpy()[j][:, :, np.newaxis], 3, axis=2)
-                            segIMG = (im[0].permute(1, 2, 0).numpy()*masksReshape*255).astype(np.uint8)
+                            masksReshape = np.repeat(masks[i].cpu().numpy()[j][:, :, np.newaxis], 3, axis=2)
+                            segIMG = (im[0].permute(1, 2, 0).cpu().numpy()*masksReshape*255).astype(np.uint8)
 
                         
                         # cv2.imshow('mask', segIMG)
