@@ -59,6 +59,7 @@ def run(
         save_conf=False,  # save confidences in --save-txt labels
         save_crop=False,  # save cropped prediction boxes
         save_seg=False,   # save cropped segment boxes
+        seg_perc=0,   # save seg only when bigger then x perc
         save_trajectories=False,  # save trajectories for each track
         save_vid=False,  # save confidences in  labels
         nosave=False,  # do not save images/videos
@@ -244,24 +245,29 @@ def run(
                     
                     for j, (output) in enumerate(outputs[i]):
 
-                        if save_seg:
-                            masksReshape = np.repeat(masks[i].cpu().numpy()[j][:, :, np.newaxis], 3, axis=2)
-                            segIMG = (im[0].permute(1, 2, 0).cpu().numpy()*masksReshape*255).astype(np.uint8)
-
-                        
-                        # cv2.imshow('mask', segIMG)
-                        
                         bbox = output[0:4]
                         id = output[4]
                         cls = output[5]
                         conf = output[6]
+                        bbox_w = output[2] - output[0]
+                        bbox_h = output[3] - output[1]
+
+                        if save_seg:
+                            validate_mask = True
+                            numpyMask = masks[i].cpu().numpy()[j]
+                            masksReshape = np.repeat(numpyMask[:, :, np.newaxis], 3, axis=2)
+                            segIMG = (im[0].permute(1, 2, 0).cpu().numpy()*masksReshape*255).astype(np.uint8)
+                            if seg_perc:
+                                total_pixels = bbox_w * bbox_h
+                                mask_pixels = np.count_nonzero(numpyMask)
+                                mask_perc = mask_pixels / total_pixels
+                                validate_mask = mask_perc > seg_perc
+
 
                         if save_txt:
                             # to MOT format
                             bbox_left = output[0]
                             bbox_top = output[1]
-                            bbox_w = output[2] - output[0]
-                            bbox_h = output[3] - output[1]
                             # Write MOT compliant results to file
                             with open(txt_path + '.txt', 'a') as f:
                                 f.write(('%g ' * 10 + '\n') % (frame_idx + 1, id, bbox_left,  # MOT format
@@ -281,7 +287,7 @@ def run(
                             if save_crop:
                                 txt_file_name = txt_file_name if (isinstance(path, list) and len(path) > 1) else ''
                                 save_one_box(np.array(bbox, dtype=np.int16), imc, file=save_dir / 'crops-img' / txt_file_name / names[c] / f'{id}' / f'{p.stem}.jpg', BGR=True)
-                            if save_seg:
+                            if save_seg and validate_mask:
                                 save_one_box(np.array(bbox, dtype=np.int16), segIMG, file=save_dir / 'crops-seg' / txt_file_name / names[c] / f'{id}' / f'{p.stem}-seg.jpg', BGR=False)
 
             else:
@@ -347,6 +353,7 @@ def parse_opt():
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
     parser.add_argument('--save-seg', action='store_true', help='save cropped segment prediction boxes')
+    parser.add_argument('--seg-perc', type=float, default=0, help='only save segmentation if mask is bigger than x percent')
     parser.add_argument('--save-trajectories', action='store_true', help='save trajectories for each track')
     parser.add_argument('--save-vid', action='store_true', help='save video tracking results')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
