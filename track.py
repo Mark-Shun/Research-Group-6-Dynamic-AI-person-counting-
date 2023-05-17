@@ -282,7 +282,7 @@ def run(
                                 txt_file_name = txt_file_name if (isinstance(path, list) and len(path) > 1) else ''
                                 save_one_box(np.array(bbox, dtype=np.int16), imc, file=save_dir / 'crops-img' / txt_file_name / names[c] / f'{id}' / f'{p.stem}.jpg', BGR=True)
                             if save_seg:
-                                save_one_box(np.array(bbox, dtype=np.int16), segIMG.astype(np.uint8), file=save_dir / 'crops-seg' / txt_file_name / names[c] / f'{id}' / f'{p.stem}-seg.jpg', BGR=False)
+                                save_one_box(np.array(bbox, dtype=np.int16), segIMG, file=save_dir / 'crops-seg' / txt_file_name / names[c] / f'{id}' / f'{p.stem}-seg.jpg', BGR=False)
 
             else:
                 pass
