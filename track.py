@@ -200,6 +200,7 @@ def run(
             txt_path = str(save_dir / 'tracks' / txt_file_name)  # im.txt
             s += '%gx%g ' % im.shape[2:]  # print string
             imc = im0.copy() if save_crop else im0  # for save_crop
+            imo = im0.copy()
 
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
             
@@ -256,8 +257,8 @@ def run(
                         if save_seg:
                             validate_mask = True
                             numpyMask = masks[i].cpu().numpy()[len(outputs[i])-j-1]
-                            masksReshape = cv2.resize(np.repeat(numpyMask[:, :, np.newaxis], 3, axis=2),(imc.shape[1], imc.shape[0]))
-                            segIMG = (imc*masksReshape).astype(np.uint8)
+                            masksReshape = cv2.resize(np.repeat(numpyMask[:, :, np.newaxis], 3, axis=2),(imo.shape[1], imo.shape[0]))
+                            segIMG = (imo*masksReshape).astype(np.uint8)
 
                             if seg_perc:
                                 total_pixels = bbox_w * bbox_h * 3
