@@ -8,7 +8,7 @@ Using the specific segmentation model of yolov8 we use the resulting mask and bo
 
 ## Usage
 ```
-python track.py --device cpu --yolo-weigths=yolov8s-seg.pt --classes 0 --save-crop --save-seg 
+python track.py --device cpu --yolo-weights yolov8n-seg.pt --classes 0 --save-crop --save-seg 
 ```
 - The device flag indicates whether you want to run the file on the CPU or GPU. (For GPU indicate the specific device number i.e. 0 or 1 etc...)
 - The yolo-weights flag indicates which specific model you want to use, take a look at the following page for an overview: https://docs.ultralytics.com/models/?h=models#models
