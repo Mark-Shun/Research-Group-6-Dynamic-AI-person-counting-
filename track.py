@@ -1,6 +1,7 @@
 import argparse
 import cv2
 import os
+import compare
 # limit the number of cpus used by high performance libraries
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -40,7 +41,7 @@ from yolov8.ultralytics.yolo.utils.ops import Profile, non_max_suppression, scal
 from yolov8.ultralytics.yolo.utils.plotting import Annotator, colors, save_one_box
 
 from trackers.multi_tracker_zoo import create_tracker
-
+LOGGER.propagate=False
 
 @torch.no_grad()
 def run(
@@ -257,6 +258,24 @@ def run(
                             numpyMask = masks[i].cpu().numpy()[j]
                             masksReshape = np.repeat(numpyMask[:, :, np.newaxis], 3, axis=2)
                             segIMG = (im[0].permute(1, 2, 0).cpu().numpy()*masksReshape*255).astype(np.uint8)
+                            Coen = cv2.imread('0-seg17.jpg', cv2.IMREAD_GRAYSCALE)
+
+                            imageFAST, infoFAST = compare.FAST(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10, show=False)
+                            imageSIFT, infoSIFT = compare.SIFT(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10, show=False)
+                            imageORB, infoORB = compare.ORB(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10, show=False)
+                            #matchedImages = compare.BRIEF(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10)
+                            
+                            imageFASTResized = cv2.resize(imageFAST, (640, 240))
+                            imageSIFTResized = cv2.resize(imageSIFT, (640, 240))
+                            imageORBResized = cv2.resize(imageORB, (640, 240))
+
+                            combined_image = np.vstack((imageFASTResized, imageSIFTResized, imageORBResized))
+                            cv2.putText(combined_image, infoFAST, org=(0,10), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
+                            cv2.putText(combined_image, infoSIFT, org=(0,250), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
+                            cv2.putText(combined_image, infoORB, org=(0,490), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
+
+                            cv2.imshow('matching algorythms', combined_image)
+
                             if seg_perc:
                                 total_pixels = bbox_w * bbox_h
                                 mask_pixels = np.count_nonzero(numpyMask)
