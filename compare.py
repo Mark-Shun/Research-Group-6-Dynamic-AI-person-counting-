@@ -1,7 +1,5 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-
 
 percentageFAST = []
 percentageSIFT = []
@@ -16,13 +14,12 @@ def computeNumbers(arr, name=''):
 
     string = f"{name} number of measurements: {length} Sum: {sum} Average: {average} "
     
-    return string, [name, length, sum, average]
+    return string
 
     
 
 def FAST(image1, image2, show=True, numberOfMeasurements=None):
     text = ''
-    data = None
 
 
     # Create FAST detector and BRISK descriptor
@@ -60,14 +57,13 @@ def FAST(image1, image2, show=True, numberOfMeasurements=None):
     percentageFAST.append(match_percentage)
 
     if numberOfMeasurements < len(percentageFAST):
-        text, data = computeNumbers(percentageFAST, 'FAST')
+        text = computeNumbers(percentageFAST, 'FAST')
 
-    return matched_image, text, data
+    return matched_image, text
 
 
 def SIFT(image1, image2, show=True, numberOfMeasurements=None):
     text = ''
-    data = None
 
 
     # Create a SIFT object
@@ -103,14 +99,13 @@ def SIFT(image1, image2, show=True, numberOfMeasurements=None):
     percentageSIFT.append(match_percentage)
 
     if numberOfMeasurements < len(percentageSIFT):
-        text, data = computeNumbers(percentageSIFT, 'SIFT')
+        text = computeNumbers(percentageSIFT, 'SIFT')
 
-    return matched_image, text, data
+    return matched_image, text
 
 
 def ORB(image1, image2, show=True, numberOfMeasurements=None):
     text = ''
-    data = None
 
     orb = cv2.ORB_create()
 
@@ -144,9 +139,9 @@ def ORB(image1, image2, show=True, numberOfMeasurements=None):
     percentageORB.append(match_percentage)
 
     if numberOfMeasurements < len(percentageORB):
-        text, data = computeNumbers(percentageORB, 'ORB')
+        text = computeNumbers(percentageORB, 'ORB')
 
-    return matched_image, text, data
+    return matched_image, text
 
 
 def BRIEF(image1, image2, show=True, numberOfMeasurements=None):
@@ -189,32 +184,3 @@ def BRIEF(image1, image2, show=True, numberOfMeasurements=None):
         text = computeNumbers(percentageBRIEF, 'BRIEF')
 
     return matched_image, text
-
-
-def showHistogram(data1=None, data2=None, data3=None):
-    fig, ax = plt.subplots()
-
-    name = []
-    height = []
-    colors = ['red', 'blue', 'green']
-
-    if data1:
-        name.append(data1[0])
-        height.append(data1[3])
-
-    if data2:
-        name.append(data2[0])
-        height.append(data2[3])
-    
-    if data2:
-        name.append(data3[0])
-        height.append(data3[3])
-
-    ax.bar(name, height, color=colors)
-
-    ax.set_xlabel('Algoritme')
-    ax.set_ylabel('Average %')
-    ax.set_title('Gemiddelde accuracy')
-    plt.show(block=False)
-    plt.close()
-    return

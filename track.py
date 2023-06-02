@@ -262,9 +262,9 @@ def run(
                             segIMG = (im[0].permute(1, 2, 0).cpu().numpy()*masksReshape*255).astype(np.uint8)
                             Coen = cv2.imread('0-seg17.jpg', cv2.IMREAD_GRAYSCALE)
 
-                            imageFAST, infoFAST, dataFAST = compare.FAST(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10, show=False)
-                            imageSIFT, infoSIFT, dataSIFT = compare.SIFT(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10, show=False)
-                            imageORB, infoORB, dataORB = compare.ORB(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10, show=False)
+                            imageFAST, infoFAST = compare.FAST(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10, show=False)
+                            imageSIFT, infoSIFT = compare.SIFT(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10, show=False)
+                            imageORB, infoORB = compare.ORB(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10, show=False)
                             #matchedImages = compare.BRIEF(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10)
                             
                             imageFASTResized = cv2.resize(imageFAST, (640, 240))
@@ -277,8 +277,6 @@ def run(
                             cv2.putText(combined_image, infoORB, org=(0,490), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
 
                             cv2.imshow('matching algorythms', combined_image)
-
-                            compare.showHistogram(dataFAST, dataORB, dataSIFT)
 
                             if seg_perc:
                                 total_pixels = bbox_w * bbox_h * 3
@@ -328,7 +326,6 @@ def run(
                     windows.append(p)
                     cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
                     cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
-  
                 cv2.imshow(str(p), im0)
                 if cv2.waitKey(1) == ord('q'):  # 1 millisecond
                     exit()
