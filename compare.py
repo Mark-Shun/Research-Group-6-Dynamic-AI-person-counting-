@@ -47,7 +47,10 @@ def FAST(image1, image2, show=True, numberOfMeasurements=None):
     filtered_matches = [match for match in matches if match.distance < distance_threshold]
 
     # Calculate match percentage
-    match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
+    if not len(keypoints1):
+        match_percentage = 0
+    else:
+        match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
     # Draw matches
     matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2, filtered_matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
@@ -94,7 +97,10 @@ def SIFT(image1, image2, show=True, numberOfMeasurements=None):
     filtered_matches = [match for match in matches if match.distance < distance_threshold]
 
     # Calculate match percentage
-    match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
+    if not len(keypoints1):
+        match_percentage = 0
+    else:
+        match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
     if show:
         cv2.imshow('SIFT', matched_image)
@@ -135,7 +141,10 @@ def ORB(image1, image2, show=True, numberOfMeasurements=None):
     filtered_matches = [match for match in matches if match.distance < distance_threshold]
 
     # Calculate match percentage
-    match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
+    if not len(keypoints1):
+        match_percentage = 0
+    else:
+        match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
     if show:
         cv2.imshow('ORB', matched_image)
@@ -177,7 +186,10 @@ def BRIEF(image1, image2, show=True, numberOfMeasurements=None):
     filtered_matches = [match for match in matches if match.distance < distance_threshold]
 
     # Calculate match percentage
-    match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
+    if not len(keypoints1):
+        match_percentage = 0
+    else:
+        match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
     if show:
         cv2.imshow('BRIEF', matched_image)
