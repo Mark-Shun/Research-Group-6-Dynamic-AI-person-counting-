@@ -1,7 +1,6 @@
 import argparse
 import cv2
 import os
-from time import sleep
 import compare
 # limit the number of cpus used by high performance libraries
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -201,7 +200,6 @@ def run(
             txt_path = str(save_dir / 'tracks' / txt_file_name)  # im.txt
             s += '%gx%g ' % im.shape[2:]  # print string
             imc = im0.copy() if save_crop else im0  # for save_crop
-            imo = im0.copy()
 
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
             
@@ -247,7 +245,7 @@ def run(
 
                     
                     for j, (output) in enumerate(outputs[i]):
-                        
+
                         bbox = output[0:4]
                         id = output[4]
                         cls = output[5]
@@ -279,9 +277,9 @@ def run(
                             cv2.imshow('matching algorythms', combined_image)
 
                             if seg_perc:
-                                total_pixels = bbox_w * bbox_h * 3
-                                mask_pixels = np.count_nonzero(masksReshape)
-                                mask_perc = mask_pixels / (total_pixels)
+                                total_pixels = bbox_w * bbox_h
+                                mask_pixels = np.count_nonzero(numpyMask)
+                                mask_perc = mask_pixels / total_pixels
                                 validate_mask = mask_perc > seg_perc
 
 
@@ -309,11 +307,7 @@ def run(
                                 txt_file_name = txt_file_name if (isinstance(path, list) and len(path) > 1) else ''
                                 save_one_box(np.array(bbox, dtype=np.int16), imc, file=save_dir / 'crops-img' / txt_file_name / names[c] / f'{id}' / f'{p.stem}.jpg', BGR=True)
                             if save_seg and validate_mask:
-                                _,thresh = cv2.threshold(cv2.cvtColor(segIMG,cv2.COLOR_BGR2GRAY),1,255,cv2.THRESH_BINARY)
-                                contours,hierarchy = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-                                cnt = contours[0]
-                                x,y,w,h = cv2.boundingRect(cnt)
-                                save_one_box(np.array([x, y, x+w, y+h], dtype=np.int16), segIMG, file=save_dir / 'crops-seg' / txt_file_name / names[c] / f'{id}' / f'{p.stem}-seg.jpg', BGR=True)
+                                save_one_box(np.array(bbox, dtype=np.int16), segIMG, file=save_dir / 'crops-seg' / txt_file_name / names[c] / f'{id}' / f'{p.stem}-seg.jpg', BGR=False)
 
             else:
                 pass
