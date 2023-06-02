@@ -260,25 +260,6 @@ def run(
                             numpyMask = masks[i].cpu().numpy()[j]
                             masksReshape = np.repeat(numpyMask[:, :, np.newaxis], 3, axis=2)
                             segIMG = (im[0].permute(1, 2, 0).cpu().numpy()*masksReshape*255).astype(np.uint8)
-                            Coen = cv2.imread('0-seg17.jpg', cv2.IMREAD_GRAYSCALE)
-
-                            imageFAST, infoFAST, dataFAST = compare.FAST(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10, show=False)
-                            imageSIFT, infoSIFT, dataSIFT = compare.SIFT(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10, show=False)
-                            imageORB, infoORB, dataORB = compare.ORB(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10, show=False)
-                            #matchedImages = compare.BRIEF(cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), cv2.cvtColor(segIMG, cv2.COLOR_RGB2GRAY), numberOfMeasurements=10)
-                            
-                            imageFASTResized = cv2.resize(imageFAST, (640, 240))
-                            imageSIFTResized = cv2.resize(imageSIFT, (640, 240))
-                            imageORBResized = cv2.resize(imageORB, (640, 240))
-
-                            combined_image = np.vstack((imageFASTResized, imageSIFTResized, imageORBResized))
-                            cv2.putText(combined_image, infoFAST, org=(0,10), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
-                            cv2.putText(combined_image, infoSIFT, org=(0,250), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
-                            cv2.putText(combined_image, infoORB, org=(0,490), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
-
-                            cv2.imshow('matching algorythms', combined_image)
-
-                            compare.showHistogram(dataFAST, dataORB, dataSIFT)
 
                             if seg_perc:
                                 total_pixels = bbox_w * bbox_h * 3
@@ -315,7 +296,25 @@ def run(
                                 contours,hierarchy = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
                                 cnt = contours[0]
                                 x,y,w,h = cv2.boundingRect(cnt)
-                                save_one_box(np.array([x, y, x+w, y+h], dtype=np.int16), segIMG, file=save_dir / 'crops-seg' / txt_file_name / names[c] / f'{id}' / f'{p.stem}-seg.jpg', BGR=True)
+                                crop = save_one_box(np.array([x, y, x+w, y+h], dtype=np.int16), segIMG, file=save_dir / 'crops-seg' / txt_file_name / names[c] / f'{id}' / f'{p.stem}-seg.jpg', BGR=False)
+
+                                imageFAST, infoFAST, dataFAST = compare.FAST(crop, crop, numberOfMeasurements=10, show=False)
+                                imageSIFT, infoSIFT, dataSIFT = compare.SIFT(crop, crop, numberOfMeasurements=10, show=False)
+                                imageORB, infoORB, dataORB = compare.ORB(crop, crop, numberOfMeasurements=10, show=False)
+                            
+                                imageFASTResized = cv2.resize(imageFAST, (640, 240))
+                                imageSIFTResized = cv2.resize(imageSIFT, (640, 240))
+                                imageORBResized = cv2.resize(imageORB, (640, 240))
+
+                                combined_image = np.vstack((imageFASTResized, imageSIFTResized, imageORBResized))
+                                cv2.putText(combined_image, infoFAST, org=(0,10), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
+                                cv2.putText(combined_image, infoSIFT, org=(0,250), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
+                                cv2.putText(combined_image, infoORB, org=(0,490), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
+
+                                cv2.imshow('matching algorythms', combined_image)
+
+                                compare.showHistogram(dataFAST, dataORB, dataSIFT)
+                                
 
             else:
                 pass
