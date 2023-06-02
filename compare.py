@@ -47,11 +47,7 @@ def FAST(image1, image2, show=True, numberOfMeasurements=None):
     filtered_matches = [match for match in matches if match.distance < distance_threshold]
 
     # Calculate match percentage
-    if not len(keypoints1):
-        match_percentage = 0
-    
-    else:
-        match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
+    match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
     # Draw matches
     matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2, filtered_matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
@@ -98,11 +94,7 @@ def SIFT(image1, image2, show=True, numberOfMeasurements=None):
     filtered_matches = [match for match in matches if match.distance < distance_threshold]
 
     # Calculate match percentage
-    if not len(keypoints1):
-        match_percentage = 0
-    
-    else:
-        match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
+    match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
     if show:
         cv2.imshow('SIFT', matched_image)
@@ -143,11 +135,7 @@ def ORB(image1, image2, show=True, numberOfMeasurements=None):
     filtered_matches = [match for match in matches if match.distance < distance_threshold]
 
     # Calculate match percentage
-    if not len(keypoints1):
-        match_percentage = 0
-    
-    else:
-        match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
+    match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
     if show:
         cv2.imshow('ORB', matched_image)
@@ -189,11 +177,7 @@ def BRIEF(image1, image2, show=True, numberOfMeasurements=None):
     filtered_matches = [match for match in matches if match.distance < distance_threshold]
 
     # Calculate match percentage
-    if not len(keypoints1):
-        match_percentage = 0
-    
-    else:
-        match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
+    match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
     if show:
         cv2.imshow('BRIEF', matched_image)
@@ -222,7 +206,7 @@ def showHistogram(data1=None, data2=None, data3=None):
         name.append(data2[0])
         height.append(data2[3])
     
-    if data3:
+    if data2:
         name.append(data3[0])
         height.append(data3[3])
 
@@ -234,23 +218,3 @@ def showHistogram(data1=None, data2=None, data3=None):
     plt.show(block=False)
     plt.close()
     return
-
-if __name__ == '__main__':
-    directory = 'runs\\track\\exp124\\crops-seg\\videoplayback\\person'
-
-    import os
-    from PIL import Image
-
-    for map in os.listdir(directory):
-        firstPicture = None
-        for picture in os.listdir(directory + '/' + map):
-            path = os.path.join(directory, map, picture)
-            if firstPicture is None:
-                firstPicture = np.array(Image.open(path))
-                continue
-
-            print(path)
-            image = Image.open(path)
-            imageArr = np.array(image)
-
-            imageFAST, infoFAST, dataFAST = FAST(firstPicture, imageArr, numberOfMeasurements=10, show=True)
