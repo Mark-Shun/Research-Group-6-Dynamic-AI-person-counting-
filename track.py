@@ -254,9 +254,11 @@ def run(
 
                         if save_seg:
                             validate_mask = True
-                            numpyMask = masks[i].cpu().numpy()[j]
-                            masksReshape = np.repeat(numpyMask[:, :, np.newaxis], 3, axis=2)
-                            segIMG = (im[0].permute(1, 2, 0).cpu().numpy()*masksReshape*255).astype(np.uint8)
+
+                            numpyMask = masks[i].cpu().numpy()[len(outputs[i])-j-1]
+                            masksReshape = cv2.resize(np.repeat(numpyMask[:, :, np.newaxis], 3, axis=2),(imc.shape[1], imc.shape[0]))
+                            segIMG = (imc*masksReshape).astype(np.uint8)
+
                             if seg_perc:
                                 total_pixels = bbox_w * bbox_h
                                 mask_pixels = np.count_nonzero(numpyMask)
