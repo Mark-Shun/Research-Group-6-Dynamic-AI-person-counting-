@@ -136,11 +136,7 @@ def ORB(image1, image2, show=True, numberOfMeasurements=None):
     image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
     image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
-<<<<<<< Updated upstream
     orb = cv2.ORB_create(nfeatures=2000, nlevels=8, scaleFactor=1.2, edgeThreshold=10, patchSize=31)
-=======
-    orb = cv2.ORB_create()
->>>>>>> Stashed changes
 
     # Detect and compute keypoints and descriptors for both images
     keypoints1, descriptors1 = orb.detectAndCompute(image1, None)
