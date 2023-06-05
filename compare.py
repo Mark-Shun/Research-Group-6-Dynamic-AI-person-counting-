@@ -133,14 +133,14 @@ def ORB(image1, image2, show=True, numberOfMeasurements=None):
     image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
     image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
-    orb = cv2.ORB_create(nfeatures=1500, edgeThreshold=1000)
+    orb = cv2.ORB_create(nfeatures=2000, nlevels=8, scaleFactor=1.2, edgeThreshold=10, patchSize=31)
 
     # Detect and compute keypoints and descriptors for both images
     keypoints1, descriptors1 = orb.detectAndCompute(image1, None)
     keypoints2, descriptors2 = orb.detectAndCompute(image2, None)
 
     # Create a BFMatcher object
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    bf = cv2.BFMatcher_create(cv2.NORM_HAMMING, crossCheck=True)
 
     # Match descriptors
     matches = bf.match(descriptors1, descriptors2)
@@ -149,7 +149,7 @@ def ORB(image1, image2, show=True, numberOfMeasurements=None):
     matches = sorted(matches, key=lambda x: x.distance)
 
     # Draw top 10 matches
-    matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches[:10], None, flags=2)
+    matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 
     # Apply distance threshold to filter out matches
     distance_threshold = 50
@@ -165,13 +165,13 @@ def ORB(image1, image2, show=True, numberOfMeasurements=None):
         match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
     if show:
-        cv2.imshow('SIFT', matched_image)
+        cv2.imshow('ORB', matched_image)
 
     print("Match Percentage:", match_percentage)
-    percentageSIFT.append(match_percentage)
+    percentageORB.append(match_percentage)
 
-    if numberOfMeasurements < len(percentageSIFT):
-        text, data = computeNumbers(percentageSIFT, 'SIFT')
+    if numberOfMeasurements < len(percentageORB):
+        text, data = computeNumbers(percentageORB, 'ORB')
 
     return matched_image, text, data
 
