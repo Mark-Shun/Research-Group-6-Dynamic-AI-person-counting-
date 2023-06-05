@@ -115,7 +115,17 @@ def get_average_rgb_per_class(original_img, mask_img, amount_classes):
         average_rgb[i][0] = average_rgb[i][0] / average_rgb[i][3]
         average_rgb[i][1] = average_rgb[i][1] / average_rgb[i][3]
         average_rgb[i][2] = average_rgb[i][2] / average_rgb[i][3]
+    print(average_rgb)
     return average_rgb
+    
+def compare_rgb(rgb_table, rgb_to_compare):
+    result = np.zeros((20, rgb_table.shape[0],3 ))
+    for i in range(0, rgb_table.shape[1]):
+        result[i][0] = i
+        for j in range(0, rgb_table.shape[0]):
+            for k in range(0, 3):
+                result[i][j][k] = abs((rgb_table[i][j][k]-rgb_to_compare[j][k])/rgb_to_compare[j][k])
+    return result
 
 def main():
     args = get_arguments()
@@ -151,10 +161,13 @@ def main():
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
-
+    average_rgb_table = np.zeros((20,num_classes, 4))
     palette = get_palette(num_classes)
+    i = 0
     with torch.no_grad():
+
         for idx, batch in enumerate(tqdm(dataloader)):
+            
             image, meta = batch
             img_name = meta['name'][0]
             c = meta['center'].numpy()[0]
@@ -173,14 +186,17 @@ def main():
             parsing_result_path = os.path.join(args.output_dir, img_name[:-4] + '.png')
             output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
             output_img.putpalette(palette)
+
             average_rgb = get_average_rgb_per_class(np.asarray(Image.open(f"/home/daan/Huiswerk/Jaar 3/r2d2/research-groep-6/human-parsing/inputs/{img_name}")), np.asarray(parsing_result, dtype=np.uint8), 20)
+            average_rgb_table[i] = average_rgb
             # print(np.asarray(average_rgb))
             output_img.save(parsing_result_path)
+            i+=1
             if args.logits:
                 logits_result_path = os.path.join(args.output_dir, img_name[:-4] + '.npy')
                 np.save(logits_result_path, logits_result)
-    return
-
+    
+    print(compare_rgb(average_rgb_table, average_rgb_table[1]))
 
 if __name__ == '__main__':
     main()
