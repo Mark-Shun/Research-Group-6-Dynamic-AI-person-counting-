@@ -66,6 +66,7 @@ def FAST(image1, image2, show=True, numberOfMeasurements=None):
     if show:
         cv2.imshow('FAST', matched_image)
 
+    print('FAST: ', len(keypoints1), len(keypoints2), len(filtered_matches))
     print("Match Percentage:", match_percentage)
     percentageFAST.append(match_percentage)
 
@@ -99,20 +100,22 @@ def SIFT(image1, image2, show=True, numberOfMeasurements=None):
     matches = sorted(matches, key=lambda x: x.distance)
 
     # Draw the top 10 matches
+    distance_threshold = 0
+    filtered_matches = [match for match in matches if match.distance < distance_threshold]
+    
     matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2,
-                                    matches[:10], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+                                    filtered_matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 
     # Apply distance threshold to filter out matches
-    distance_threshold = 50
-    filtered_matches = [
-        match for match in matches if match.distance < distance_threshold]
+
 
     # Calculate match percentage
+    print('SIFT: ', len(keypoints1), len(keypoints2), len(filtered_matches))
     if not len(keypoints1):
-        match_percentage = 0
+        match_percentage = 50
 
     else:
-        match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
+        match_percentage = len(filtered_matches) / len(keypoints1) * 100
 
     if show:
         cv2.imshow('SIFT', matched_image)
@@ -133,7 +136,11 @@ def ORB(image1, image2, show=True, numberOfMeasurements=None):
     image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
     image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
+<<<<<<< Updated upstream
     orb = cv2.ORB_create(nfeatures=2000, nlevels=8, scaleFactor=1.2, edgeThreshold=10, patchSize=31)
+=======
+    orb = cv2.ORB_create()
+>>>>>>> Stashed changes
 
     # Detect and compute keypoints and descriptors for both images
     keypoints1, descriptors1 = orb.detectAndCompute(image1, None)
@@ -257,38 +264,33 @@ def showHistogram(data1=None, data2=None, data3=None):
 
 def testAlgorithms():
     directory = 'runs/track/exp124/crops-seg/videoplayback/person'
+    firstPicture = cv2.imread('runs/track/exp124/crops-seg/videoplayback/person/1/videoplayback-seg17.jpg')
 
     for map in os.listdir(directory):
-        firstPicture = None
         for picture in os.listdir(directory + '/' + map):
             path = os.path.join(directory, map, picture)
-            if firstPicture is None:
-                firstPicture = np.array(Image.open(path))
-                continue
 
             print(path)
             image = Image.open(path)
             imageArr = np.array(image)
 
             imageFAST, infoFAST, dataFAST = FAST(
-                firstPicture, firstPicture, numberOfMeasurements=10, show=False)
+                firstPicture, imageArr, numberOfMeasurements=10, show=False)
             imageSIFT, infoSIFT, dataSIFT = SIFT(
-                firstPicture, firstPicture, numberOfMeasurements=10, show=False)
-            imageORB, infoORB, dataORB = ORB(
-                firstPicture, firstPicture, numberOfMeasurements=10, show=False)
+                firstPicture, imageArr, numberOfMeasurements=10, show=False)
+            # imageORB, infoORB, dataORB = ORB( firstPicture, firstPicture, numberOfMeasurements=10, show=False)
 
-            imageFASTResized = cv2.resize(imageFAST, (640, 240))
-            imageSIFTResized = cv2.resize(imageSIFT, (640, 240))
-            imageORBResized = cv2.resize(imageORB, (640, 240))
+            imageFASTResized = cv2.resize(imageFAST, (960, 360))
+            imageSIFTResized = cv2.resize(imageSIFT, (960, 360))
+            # imageORBResized = cv2.resize(imageORB, (640, 240))
 
             combined_image = np.vstack(
-                (imageFASTResized, imageSIFTResized, imageORBResized))
+                (imageFASTResized, imageSIFTResized))
             cv2.putText(combined_image, infoFAST, org=(
                 0, 10), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
             cv2.putText(combined_image, infoSIFT, org=(
-                0, 250), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
-            cv2.putText(combined_image, infoORB, org=(
-                0, 490), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
+                0, 970), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
+            # cv2.putText(combined_image, infoORB, org=( 0, 490), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
             cv2.imshow('matching algorythms', combined_image)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
