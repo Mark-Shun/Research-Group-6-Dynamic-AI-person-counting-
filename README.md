@@ -1,3 +1,28 @@
+# Group 6 R&A project
+For usage in our research project we have adapted and adjusted the following repository for our use:
+https://github.com/mikel-brostrom/yolov8_tracking
+With this code the camera feed is used to detect and extract detected objects, in our case specifically human individuals.
+Using the specific segmentation model of yolov8 we use the resulting mask and bounding box to crop the image and exclude the background so that only the detected person remains. The resulting images are then stored in the runs directory.
+
+## Usage
+The following line is an example of all the flags that can be utilized for the project, decide yourself which values and whether or not you want to use a certain flag.
+```
+python track.py --device cpu --source 0 --yolo-weights yolov8n-seg.pt --classes 0 --save-crop --save-seg --save-perc 0.4 --panorama images/backyard2
+```
+- The device flag indicates whether you want to run the file on the CPU or GPU. (For GPU indicate the specific device number i.e. 0 or 1 etc...)
+- The yolo-weights flag indicates which specific model you want to use, take a look at the following page for an overview: https://docs.ultralytics.com/models/?h=models#models
+- The source flag is the input on which the code will be performed. (0 for webcam, for a specific file: file/dir/URL/glob) **(!)** When parsing a video file use the **--show-vid** flag as well if you want to see output.
+- The yolo-weights flag indicates which specific model you want to use, take a look at the following page for an overview: 
+https://docs.ultralytics.com/tasks/segment/#models
+https://docs.ultralytics.com/models/?h=models#models
+- The classes flag filters which object classification(s) will be used. (0 is just for humans)
+- The save crop flag as the name implies saves images of the cropped bounding box of an identified object.
+- The save seg flag uses the mask provided by the model to save images of the cropped bounding box with the background removed.
+- The save perc flag determines at which percentage of image being filled with the mask, should the picture be saved. (In the example it is set at 0.4 so if 40% of the image is the cut out of the mask it gets saved and otherwise discarded.)
+- The panorama flag executes the stitching function in a specified folder on all the images in there. And parses the resulting panorama image as the source into the Yolo model.
+
+# Original README
+
 # Real-time multi-object tracking and segmentation using Yolov8 with DeepOCSORT and OSNet
 
 
