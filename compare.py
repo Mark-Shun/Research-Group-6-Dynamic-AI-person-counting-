@@ -1,3 +1,5 @@
+import os
+from PIL import Image
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,26 +10,28 @@ percentageSIFT = []
 percentageORB = []
 percentageBRIEF = []
 
+
 def computeNumbers(arr, name=''):
     sum = np.array(arr).sum()
     average = sum / len(arr)
     length = len(arr)
-    #print('\n',name, 'number of measurements:', length, '\nSum: ', sum, '\nAverage: ', average, '\n')
+    # print('\n',name, 'number of measurements:', length, '\nSum: ', sum, '\nAverage: ', average, '\n')
 
     string = f"{name} number of measurements: {length} Sum: {sum} Average: {average} "
-    
+
     return string, [name, length, sum, average]
 
-    
 
 def FAST(image1, image2, show=True, numberOfMeasurements=None):
     text = ''
     data = None
 
+    image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
+    image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
     # Create FAST detector and BRISK descriptor
     detector = cv2.FastFeatureDetector_create()
-    #detector = cv2.AgastFeatureDetector_create()
+    # detector = cv2.AgastFeatureDetector_create()
 
     descriptor = cv2.BRISK_create()
 
@@ -44,22 +48,24 @@ def FAST(image1, image2, show=True, numberOfMeasurements=None):
 
     # Apply distance threshold to filter out matches
     distance_threshold = 50
-    filtered_matches = [match for match in matches if match.distance < distance_threshold]
+    filtered_matches = [
+        match for match in matches if match.distance < distance_threshold]
 
     # Calculate match percentage
     if not len(keypoints1):
         match_percentage = 0
-    
+
     else:
         match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
     # Draw matches
-    matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2, filtered_matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2,
+                                    filtered_matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 
     # Display the matched image and match percentage
     if show:
         cv2.imshow('FAST', matched_image)
-        
+
     print("Match Percentage:", match_percentage)
     percentageFAST.append(match_percentage)
 
@@ -73,6 +79,8 @@ def SIFT(image1, image2, show=True, numberOfMeasurements=None):
     text = ''
     data = None
 
+    image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
+    image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
     # Create a SIFT object
     sift = cv2.SIFT_create()
@@ -80,7 +88,7 @@ def SIFT(image1, image2, show=True, numberOfMeasurements=None):
     # Detect keypoints and compute descriptors for the images
     keypoints1, descriptors1 = sift.detectAndCompute(image1, None)
     keypoints2, descriptors2 = sift.detectAndCompute(image2, None)
-    
+
     # Create a BFMatcher object
     bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
 
@@ -89,18 +97,20 @@ def SIFT(image1, image2, show=True, numberOfMeasurements=None):
 
     # Sort the matches based on their distances
     matches = sorted(matches, key=lambda x: x.distance)
-    
+
     # Draw the top 10 matches
-    matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches[:10], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2,
+                                    matches[:10], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 
     # Apply distance threshold to filter out matches
     distance_threshold = 50
-    filtered_matches = [match for match in matches if match.distance < distance_threshold]
+    filtered_matches = [
+        match for match in matches if match.distance < distance_threshold]
 
     # Calculate match percentage
     if not len(keypoints1):
         match_percentage = 0
-    
+
     else:
         match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
@@ -120,43 +130,48 @@ def ORB(image1, image2, show=True, numberOfMeasurements=None):
     text = ''
     data = None
 
-    orb = cv2.ORB_create()
+    image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
+    image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
-    # Detect keypoints and compute descriptors for both images
+    orb = cv2.ORB_create(nfeatures=1500, edgeThreshold=1000)
+
+    # Detect and compute keypoints and descriptors for both images
     keypoints1, descriptors1 = orb.detectAndCompute(image1, None)
     keypoints2, descriptors2 = orb.detectAndCompute(image2, None)
 
-    # Create a Brute-Force matcher object
+    # Create a BFMatcher object
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 
-    # Match descriptors of both images
+    # Match descriptors
     matches = bf.match(descriptors1, descriptors2)
 
-    # Sort the matches by distance
+    # Sort matches by distance
     matches = sorted(matches, key=lambda x: x.distance)
 
-    # Draw the top matches
-    matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches[:10], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    # Draw top 10 matches
+    matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches[:10], None, flags=2)
 
     # Apply distance threshold to filter out matches
     distance_threshold = 50
-    filtered_matches = [match for match in matches if match.distance < distance_threshold]
+    filtered_matches = [
+        match for match in matches if match.distance < distance_threshold]
 
     # Calculate match percentage
+    print(len(keypoints1))
     if not len(keypoints1):
         match_percentage = 0
-    
+
     else:
         match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
     if show:
-        cv2.imshow('ORB', matched_image)
+        cv2.imshow('SIFT', matched_image)
 
     print("Match Percentage:", match_percentage)
-    percentageORB.append(match_percentage)
+    percentageSIFT.append(match_percentage)
 
-    if numberOfMeasurements < len(percentageORB):
-        text, data = computeNumbers(percentageORB, 'ORB')
+    if numberOfMeasurements < len(percentageSIFT):
+        text, data = computeNumbers(percentageSIFT, 'SIFT')
 
     return matched_image, text, data
 
@@ -164,6 +179,8 @@ def ORB(image1, image2, show=True, numberOfMeasurements=None):
 def BRIEF(image1, image2, show=True, numberOfMeasurements=None):
     text = ''
 
+    image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
+    image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
     # Initialize BRIEF
     # requires opencv-contrib-python
@@ -183,15 +200,17 @@ def BRIEF(image1, image2, show=True, numberOfMeasurements=None):
     matches = sorted(matches, key=lambda x: x.distance)
 
     # Draw the top matches
-    matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches[:10], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2,
+                                    matches[:10], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 
     distance_threshold = 50
-    filtered_matches = [match for match in matches if match.distance < distance_threshold]
+    filtered_matches = [
+        match for match in matches if match.distance < distance_threshold]
 
     # Calculate match percentage
     if not len(keypoints1):
         match_percentage = 0
-    
+
     else:
         match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
@@ -221,7 +240,7 @@ def showHistogram(data1=None, data2=None, data3=None):
     if data2:
         name.append(data2[0])
         height.append(data2[3])
-    
+
     if data3:
         name.append(data3[0])
         height.append(data3[3])
@@ -235,11 +254,9 @@ def showHistogram(data1=None, data2=None, data3=None):
     plt.close()
     return
 
-if __name__ == '__main__':
-    directory = 'runs\\track\\exp124\\crops-seg\\videoplayback\\person'
 
-    import os
-    from PIL import Image
+def testAlgorithms():
+    directory = 'runs/track/exp124/crops-seg/videoplayback/person'
 
     for map in os.listdir(directory):
         firstPicture = None
@@ -253,4 +270,29 @@ if __name__ == '__main__':
             image = Image.open(path)
             imageArr = np.array(image)
 
-            imageFAST, infoFAST, dataFAST = FAST(firstPicture, imageArr, numberOfMeasurements=10, show=True)
+            imageFAST, infoFAST, dataFAST = FAST(
+                firstPicture, firstPicture, numberOfMeasurements=10, show=False)
+            imageSIFT, infoSIFT, dataSIFT = SIFT(
+                firstPicture, firstPicture, numberOfMeasurements=10, show=False)
+            imageORB, infoORB, dataORB = ORB(
+                firstPicture, firstPicture, numberOfMeasurements=10, show=False)
+
+            imageFASTResized = cv2.resize(imageFAST, (640, 240))
+            imageSIFTResized = cv2.resize(imageSIFT, (640, 240))
+            imageORBResized = cv2.resize(imageORB, (640, 240))
+
+            combined_image = np.vstack(
+                (imageFASTResized, imageSIFTResized, imageORBResized))
+            cv2.putText(combined_image, infoFAST, org=(
+                0, 10), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
+            cv2.putText(combined_image, infoSIFT, org=(
+                0, 250), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
+            cv2.putText(combined_image, infoORB, org=(
+                0, 490), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
+            cv2.imshow('matching algorythms', combined_image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+
+
+if __name__ == '__main__':
+    testAlgorithms()
