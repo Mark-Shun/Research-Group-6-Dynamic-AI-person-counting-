@@ -1,3 +1,5 @@
+#TODO Add flag option for track python script to use the panorama function and use returned image in the code. (Just output detected people as a value)
+
 import argparse
 import cv2
 import os
@@ -15,6 +17,7 @@ import numpy as np
 from pathlib import Path
 import torch
 import torch.backends.cudnn as cudnn
+from stitching_lib import stitch_directory
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # yolov5 strongsort root directory
@@ -80,14 +83,18 @@ def run(
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
         retina_masks=False,
+        panorama=False
 ):
     
     # source='0'
     # yolo_weights = 
 
-
-
-    source = str(source)
+    if(panorama):
+        panorama_output = stitch_directory(directory_path=Path(panorama),save_image=True)
+        source=(f"{Path(panorama)}/stitched_image.jpg")
+    else:
+        source = str(source)
+    
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     is_file = Path(source).suffix[1:] in (VID_FORMATS)
     is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
@@ -115,7 +122,7 @@ def run(
 
     # Dataloader
     bs = 1
-    if webcam:
+    if webcam and not panorama:
         show_vid = check_imshow(warn=True)
         dataset = LoadStreams(
             source,
@@ -381,6 +388,7 @@ def parse_opt():
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
     parser.add_argument('--retina-masks', action='store_true', help='whether to plot masks in native resolution')
+    parser.add_argument('--panorama', type=Path, help='Uses stitching feature to create a panorama image and execute Yolo recognition over it')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     opt.tracking_config = ROOT / 'trackers' / opt.tracking_method / 'configs' / (opt.tracking_method + '.yaml')
