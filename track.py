@@ -61,6 +61,7 @@ def run(
         save_crop=False,  # save cropped prediction boxes
         save_seg=False,   # save cropped segment boxes
         seg_perc=0,   # save seg only when bigger then x perc
+        max_pix=0,   # save seg only when bigger then x perc
         save_trajectories=False,  # save trajectories for each track
         save_vid=False,  # save confidences in  labels
         nosave=False,  # do not save images/videos
@@ -266,6 +267,8 @@ def run(
                                 mask_perc = mask_pixels / (total_pixels)
                                 validate_mask = mask_perc > seg_perc
 
+                            
+
 
                         if save_txt:
                             # to MOT format
@@ -290,12 +293,15 @@ def run(
                             if save_crop:
                                 txt_file_name = txt_file_name if (isinstance(path, list) and len(path) > 1) else ''
                                 save_one_box(np.array(bbox, dtype=np.int16), imc, file=save_dir / 'crops-img' / txt_file_name / names[c] / f'{id}' / f'{p.stem}.jpg', BGR=True)
-                            if save_seg and validate_mask:
+                            if save_seg:
                                 _,thresh = cv2.threshold(cv2.cvtColor(segIMG,cv2.COLOR_BGR2GRAY),1,255,cv2.THRESH_BINARY)
                                 contours,hierarchy = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
                                 cnt = contours[0]
                                 x,y,w,h = cv2.boundingRect(cnt)
-                                save_one_box(np.array([x, y, x+w, y+h], dtype=np.int16), segIMG, file=save_dir / 'crops-seg' / txt_file_name / names[c] / f'{id}' / f'{p.stem}-seg.jpg', BGR=True)
+                                if max_pix > (w*h):
+                                    validate_mask = False
+                                if validate_mask:
+                                    save_one_box(np.array([x, y, x+w, y+h], dtype=np.int16), segIMG, file=save_dir / 'crops-seg' / txt_file_name / names[c] / f'{id}-{p.stem}-seg.jpg', BGR=True)
 
             else:
                 pass
@@ -361,6 +367,7 @@ def parse_opt():
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
     parser.add_argument('--save-seg', action='store_true', help='save cropped segment prediction boxes')
     parser.add_argument('--seg-perc', type=float, default=0, help='only save segmentation if mask is bigger than x percent')
+    parser.add_argument('--max-pix', type=int, default=0, help='only save segmentation if pixel count is higher than x')
     parser.add_argument('--save-trajectories', action='store_true', help='save trajectories for each track')
     parser.add_argument('--save-vid', action='store_true', help='save video tracking results')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
