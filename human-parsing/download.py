@@ -1,6 +1,6 @@
 import gdown
 
-dataset = 'lip'         #select from ['lip', 'atr', 'pascal']
+dataset = 'atr'         #select from ['lip', 'atr', 'pascal']
 
 if dataset == 'lip':
     url = 'https://drive.google.com/uc?id=1k4dllHpu0bdx38J7H28rVVLpU-kOHmnH'
