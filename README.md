@@ -7,7 +7,7 @@ Using the specific segmentation model of yolov8 we use the resulting mask and bo
 ## Usage
 The following line is an example of all the flags that can be utilized for the project, decide yourself which values and whether or not you want to use a certain flag.
 ```
-python track.py --device cpu --source 0 --yolo-weights yolov8n-seg.pt --classes 0 --save-crop --save-seg --save-perc 0.4 --panorama images/backyard2
+python track.py --device cpu --source 0 --yolo-weights yolov8n-seg.pt --classes 0 --save-crop --save-seg --seg-perc 0.4 --panorama images/backyard2
 ```
 - The device flag indicates whether you want to run the file on the CPU or GPU. (For GPU indicate the specific device number i.e. 0 or 1 etc...)
 - The yolo-weights flag indicates which specific model you want to use, take a look at the following page for an overview: https://docs.ultralytics.com/models/?h=models#models
@@ -18,7 +18,7 @@ https://docs.ultralytics.com/models/?h=models#models
 - The classes flag filters which object classification(s) will be used. (0 is just for humans)
 - The save crop flag as the name implies saves images of the cropped bounding box of an identified object.
 - The save seg flag uses the mask provided by the model to save images of the cropped bounding box with the background removed.
-- The save perc flag determines at which percentage of image being filled with the mask, should the picture be saved. (In the example it is set at 0.4 so if 40% of the image is the cut out of the mask it gets saved and otherwise discarded.)
+- The seg perc flag determines at which percentage of image being filled with the mask, should the picture be saved. (In the example it is set at 0.4 so if 40% of the image is the cut out of the mask it gets saved and otherwise discarded.)
 - The panorama flag executes the stitching function in a specified folder on all the images in there. And parses the resulting panorama image as the source into the Yolo model.
 
 # Original README
