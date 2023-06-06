@@ -308,6 +308,8 @@ def run(
                     windows.append(p)
                     cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
                     cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
+                else:
+                    cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO) # added the ability to keep aspect ratio on windows as well
                 cv2.imshow(str(p), im0)
                 if cv2.waitKey(1) == ord('q'):  # 1 millisecond
                     exit()
