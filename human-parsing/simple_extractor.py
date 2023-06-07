@@ -34,6 +34,7 @@ from datasets.simple_extractor_dataset import SimpleFolderDataset
 import sys
 np.set_printoptions(threshold=sys.maxsize, precision=3, suppress=True) # Make sure numpy prints the whole array and without scientific notation
 debug = False
+save_original = True
 
 dataset_settings = {
     'lip': {
@@ -183,10 +184,31 @@ def compare_persons(rgb_table):
     total_table = np.zeros((len(os.listdir("persons")), 5))
     for foldernames in os.listdir("persons"):
         for filenames in os.listdir("persons/"+foldernames):
-            print(f"persons/{foldernames}/{filenames}")
             average_rgb = np.load(f"persons/{foldernames}/{filenames}")
             total_table[int(foldernames)-1][int(filenames[:-4])-1] = calculate_total(compare_rgb(rgb_table, average_rgb))
-    print(total_table) 
+    return total_table
+
+def add_person(rgb_table, minimum_accuracy, filename):
+    total_table = compare_persons(rgb_table)
+    table = (total_table>=0) == (total_table<=minimum_accuracy)
+    for i in range(0, len(table)):
+        for j in range(0, len(table[i])):
+            if table[i][j] == True:
+                if os.path.exists(f"persons/{i+1}") == False:
+                    os.mkdir(f"persons/{i+1}")
+                np.save(f"persons/{i+1}/{len(os.listdir(f'persons/{i+1}/'))+1}.npy", rgb_table)
+                if save_original == True:
+                    if os.path.exists(f"persons-original/{i+1}") == False:
+                        os.mkdir(f"persons-original/{i+1}")
+                    os.rename(f"inputs/{filename}", f"persons-original/{i+1}/{len(os.listdir(f'persons/{i+1}/'))+1}.jpg")
+                    return
+                else:
+                    os.remove(f"inputs/{filename}")
+                    return
+            
+    os.rename(f"inputs/{filename}", f"wrong-data/{filename}")
+
+
 
 def main():
     args = get_arguments()
@@ -255,7 +277,8 @@ def main():
             if args.logits:
                 logits_result_path = os.path.join(args.output_dir, img_name[:-4] + '.npy')
                 np.save(logits_result_path, logits_result)
-            compare_persons(average_rgb)
+            print("test")
+            add_person(average_rgb, 6.0, img_name)
     # compare_rgb(average_rgb_table, average_rgb_table[2])
     # print_table(compare_rgb(average_rgb_table, average_rgb_table[2]), label)
     
