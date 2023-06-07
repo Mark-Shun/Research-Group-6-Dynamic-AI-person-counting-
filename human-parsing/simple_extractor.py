@@ -32,7 +32,7 @@ import networks
 from utils.transforms import transform_logits
 from datasets.simple_extractor_dataset import SimpleFolderDataset
 import sys
-np.set_printoptions(threshold=sys.maxsize, precision=3, suppress=True)
+np.set_printoptions(threshold=sys.maxsize, precision=3, suppress=True) # Make sure numpy prints the whole array and without scientific notation
 debug = False
 
 dataset_settings = {
@@ -55,8 +55,8 @@ dataset_settings = {
         'label': ['Background', 'Head', 'Torso', 'Upper Arms', 'Lower Arms', 'Upper Legs', 'Lower Legs'],
     }
 }
-
-
+minumim_parts_index = [2,4,6,11,13,14]
+minumim_parts_label = [dataset_settings['atr']['label'][2], dataset_settings['atr']['label'][4], dataset_settings['atr']['label'][6], dataset_settings['atr']['label'][11], dataset_settings['atr']['label'][13], dataset_settings['atr']['label'][14]]
 def get_arguments():
     """Parse all the arguments provided from the CLI.
     Returns:
@@ -99,18 +99,23 @@ def get_palette(num_cls):
 
 
 def get_average_rgb_per_class(original_img, mask_img, amount_classes, label):
+    """ Returns the average rgb per class
+    Args: 
+        The original image, the mask image, the amount of classes and the label
+    Returns: 
+        The average rgb per class in a 2d array with the following format: [r,g,b,amount_of_pixels] for each class
+    """
     average_rgb = np.zeros((amount_classes, 4))
     for i in range(0, mask_img.shape[0]):
         for j in range(0, mask_img.shape[1]):
-                if mask_img[i][j] >= 1:
+                if mask_img[i][j] >= 1: # 0 is background so we skip it
                     if original_img[i][j][0] == 0 and original_img[i][j][1] == 0 and original_img[i][j][2] == 0:
                         continue
-                    # print(i,j,original_img[i][j], mask_img[i][j])
                     average_rgb[mask_img[i][j]][0] += original_img[i][j][0]
                     average_rgb[mask_img[i][j]][1] += original_img[i][j][1]
                     average_rgb[mask_img[i][j]][2] += original_img[i][j][2]
                     average_rgb[mask_img[i][j]][3] +=1
-    for i in range(0, amount_classes):
+    for i in range(0, amount_classes): # calculate average
         average_rgb[i][0] = average_rgb[i][0] / average_rgb[i][3]
         average_rgb[i][1] = average_rgb[i][1] / average_rgb[i][3]
         average_rgb[i][2] = average_rgb[i][2] / average_rgb[i][3]
@@ -121,40 +126,67 @@ def get_average_rgb_per_class(original_img, mask_img, amount_classes, label):
             print(row,label[row_index])
         print("\n")
     return average_rgb
-    
+
+
+""" Returns the difference between the average rgb of the image and the average rgb of the another image for each class
+Args: 
+    The average rgb of the image, the average rgb of the other image
+Returns:
+    The difference between the average rgb of the image and the average rgb of the other image for each class
+"""
 def compare_rgb(rgb_table, rgb_to_compare):
     result = np.zeros((rgb_table.shape[0],3 ))
     for i in range(0, rgb_table.shape[0]):
-        #result[i][0] = i
         for j in range(0, 3):
             result[i][j] = abs((rgb_table[i][j]-rgb_to_compare[i][j])/rgb_to_compare[i][j])
     return result
 
-def  print_table(table, label):
+""" Calculates the total rgb of the image of the minimum parts
+Args: 
+    The table with the average rgb per class
+Returns:
+    The total rgb of the image of the minimum parts
+
+"""
+def calculate_total(table):
     total = 0
     for row_index, row in enumerate(table):
-            # print(type(collum[0]), collum[0])
-            # print(np.isnan(collum[0]))
-        if row_index == 2 or row_index == 4 or row_index == 11 or row_index == 6 or row_index == 14:
+        if row_index in minumim_parts_index:
             total += row[0]
             total += row[1]
             total += row[2]
-        if np.isnan(row[0]) == True:
+    return total
+
+""" Prints the table with the average rgb per class
+Args:
+    The table with the average rgb per class, the labels of the dataset
+"""
+
+def  print_table(table, label):
+    total = 0
+    for row_index, row in enumerate(table):
+        if row_index in minumim_parts_index:
+            total += row[0]
+            total += row[1]
+            total += row[2]
+        if np.isnan(row[0]) == True: # If the average rgb is nan we skip it since there are no pixels of that class
             continue
         print(row,label[row_index])
     print(total)
     print("\n")
 
+""" Compares the average rgb of the image with the average rgb of the other images
+Args:
+    The table with the average rgb per class of the image to compare with
+"""
 def compare_persons(rgb_table):
+    total_table = np.zeros((len(os.listdir("persons")), 5))
     for foldernames in os.listdir("persons"):
         for filenames in os.listdir("persons/"+foldernames):
-            if not filenames.endswith(".jpg"):
-                continue
-            original_img = np.asarray(Image.open(f"persons/{foldernames}/{filenames}"))
-            mask_img = np.load(f"persons/{foldernames}/{filenames[:-4]}.npy")
-            parsing_result = np.argmax(mask_img, axis=2)
-            average_rgb = get_average_rgb_per_class(original_img, np.asarray(parsing_result, dtype=np.uint8), 18, dataset_settings['atr']['label'])
-            print_table(compare_rgb(rgb_table, average_rgb), dataset_settings['atr']['label'])
+            print(f"persons/{foldernames}/{filenames}")
+            average_rgb = np.load(f"persons/{foldernames}/{filenames}")
+            total_table[int(foldernames)-1][int(filenames[:-4])-1] = calculate_total(compare_rgb(rgb_table, average_rgb))
+    print(total_table) 
 
 def main():
     args = get_arguments()
@@ -190,7 +222,6 @@ def main():
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
-    average_rgb_table = np.zeros((5,num_classes, 4))
     palette = get_palette(num_classes)
     i = 0
     with torch.no_grad():
@@ -212,21 +243,22 @@ def main():
 
             logits_result = transform_logits(upsample_output.data.cpu().numpy(), c, s, w, h, input_size=input_size)
             parsing_result = np.argmax(logits_result, axis=2)
+            if np.all(np.isin(minumim_parts_index, parsing_result)) == False:
+                continue # Skip images that don't have all the minimum parts
             parsing_result_path = os.path.join(args.output_dir, img_name[:-4] + '.png')
             output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
             output_img.putpalette(palette)
 
             average_rgb = get_average_rgb_per_class(np.asarray(Image.open(f"/home/daan/Huiswerk/Jaar 3/r2d2/research-groep-6/human-parsing/inputs/{img_name}")), np.asarray(parsing_result, dtype=np.uint8), 18, label)
-            average_rgb_table[i] = average_rgb
-            # print(np.asarray(average_rgb))
             output_img.save(parsing_result_path)
             i+=1
             if args.logits:
                 logits_result_path = os.path.join(args.output_dir, img_name[:-4] + '.npy')
                 np.save(logits_result_path, logits_result)
+            compare_persons(average_rgb)
     # compare_rgb(average_rgb_table, average_rgb_table[2])
     # print_table(compare_rgb(average_rgb_table, average_rgb_table[2]), label)
-    compare_persons(average_rgb_table[0])
+    
 
 if __name__ == '__main__':
     main()
