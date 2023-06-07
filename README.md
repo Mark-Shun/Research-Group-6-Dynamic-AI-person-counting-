@@ -5,9 +5,10 @@ With this code the camera feed is used to detect and extract detected objects, i
 Using the specific segmentation model of yolov8 we use the resulting mask and bounding box to crop the image and exclude the background so that only the detected person remains. The resulting images are then stored in the runs directory.
 
 ## Usage
-The following line is an example of all the flags that can be utilized for the project, **(!)**decide yourself which values and whether or not you want to use a certain flag.
+The following line is an example of all the flags that can be utilized for the project, **(!)** decide yourself which values and whether or not you want to use a certain flag.
+Flags marked with * are used in specific circumstances
 ```
-python track.py --device 0 --source video.mp4 --yolo-weights yolov8n-seg.pt --classes 0 --save-crop --save-seg --seg-perc 0.4 --panorama images/backyard2 --max-pix 1000 --imgz 1920
+python track.py --device 0 --source video.mp4 --yolo-weights yolov8m-seg.pt --classes 0 --conf-thres 0.3 *--save-crop* --save-seg --seg-perc 0.4 --max-pix 1000 --retina-masks *--panorama images/backyard2*
 ```
 - The device flag indicates whether you want to run the file on the CPU or GPU. (For GPU indicate the specific device number i.e. 0 or 1 etc...)
 - The yolo-weights flag indicates which specific model you want to use, take a look at the following page for an overview: https://docs.ultralytics.com/models/?h=models#models
@@ -16,12 +17,13 @@ python track.py --device 0 --source video.mp4 --yolo-weights yolov8n-seg.pt --cl
 https://docs.ultralytics.com/tasks/segment/#models
 https://docs.ultralytics.com/models/?h=models#models
 - The classes flag filters which object classification(s) will be used. (0 is just for humans)
+- The conf-thres flag determines from which confidence value an identified object is registered.
 - The save crop flag as the name implies saves images of the cropped bounding box of an identified object.
 - The save seg flag uses the mask provided by the model to save images of the cropped bounding box with the background removed.
 - The seg perc flag determines at which percentage of image being filled with the mask, should the picture be saved. (In the example it is set at 0.4 so if 40% of the image is the cut out of the mask it gets saved and otherwise discarded.)
-- The panorama flag executes the stitching function in a specified folder on all the images in there. And parses the resulting panorama image as the source into the Yolo model.
 - The max pix flag sets a minimum value that the size of an image should adhere to determine whether or not to save it. This prevents very small images from cluttering the output. Size is determined by width * height.
-- In case of using a video as source file, the model is being run on a resized resolution of 640x380, to potentially improve resulting images this resizing can be changed. With higher resolutions the process becomes more expensive while even lower resolutions prevents the model of accurately identifying objects. (Provided value should be the width)
+- The retina-masks flag plots the mask in native resolution, this is useful when using a video source because otherwise the mask seems to get scaled to 640x380 making the edges pixelated.
+- The panorama flag executes the stitching function in a specified folder on all the images in there. And parses the resulting panorama image as the source into the Yolo model.
 
 # Original README
 
