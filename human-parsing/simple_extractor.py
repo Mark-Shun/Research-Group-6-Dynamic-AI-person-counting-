@@ -24,6 +24,7 @@ import argparse
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
+import shutil
 
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
@@ -200,13 +201,19 @@ def add_person(rgb_table, minimum_accuracy, filename):
                 if save_original == True:
                     if os.path.exists(f"persons-original/{i+1}") == False:
                         os.mkdir(f"persons-original/{i+1}")
-                    os.rename(f"inputs/{filename}", f"persons-original/{i+1}/{len(os.listdir(f'persons/{i+1}/'))+1}.jpg")
+                    os.rename(f"inputs/{filename}", f"persons-original/{i+1}/{len(os.listdir(f'persons/{i+1}/'))+1}-{filename}.jpg")
                     return
                 else:
                     os.remove(f"inputs/{filename}")
                     return
             
-    os.rename(f"inputs/{filename}", f"wrong-data/{filename}")
+    os.mkdir(f"persons/{len(os.listdir('persons/'))+1}")
+    np.save(f"persons/{len(os.listdir('persons/'))+1}/1.npy", rgb_table)
+    if save_original == True:
+        os.rename(f"inputs/{filename}", f"persons-original/{len(os.listdir('persons/'))+1}/1-{filename}.npy")
+    else:
+        os.remove(f"inputs/{filename}")
+
 
 
 
