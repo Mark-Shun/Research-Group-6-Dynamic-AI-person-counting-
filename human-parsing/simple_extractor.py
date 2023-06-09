@@ -57,8 +57,10 @@ dataset_settings = {
         'label': ['Background', 'Head', 'Torso', 'Upper Arms', 'Lower Arms', 'Upper Legs', 'Lower Legs'],
     }
 }
-minumim_parts_index = [2,4,6,11,13,14]
-minumim_parts_label = [dataset_settings['atr']['label'][2], dataset_settings['atr']['label'][4], dataset_settings['atr']['label'][6], dataset_settings['atr']['label'][11], dataset_settings['atr']['label'][13], dataset_settings['atr']['label'][14]]
+minumim_parts_index = [2,4,6,10,11,14]
+minumim_parts_label = [dataset_settings['atr']['label'][2], dataset_settings['atr']['label'][4], dataset_settings['atr']['label'][6], dataset_settings['atr']['label'][10], dataset_settings['atr']['label'][11], dataset_settings['atr']['label'][14]]
+minimum_pixels = 500
+
 def get_arguments():
     """Parse all the arguments provided from the CLI.
     Returns:
@@ -182,7 +184,7 @@ Args:
     The table with the average rgb per class of the image to compare with
 """
 def compare_persons(rgb_table):
-    total_table = np.zeros((len(os.listdir("persons")), 5))
+    total_table = np.zeros((len(os.listdir("persons")), 20))
     for foldernames in os.listdir("persons"):
         for filenames in os.listdir("persons/"+foldernames):
             average_rgb = np.load(f"persons/{foldernames}/{filenames}")
@@ -191,7 +193,7 @@ def compare_persons(rgb_table):
 
 def add_person(rgb_table, minimum_accuracy, filename):
     total_table = compare_persons(rgb_table)
-    table = (total_table>=0) == (total_table<=minimum_accuracy)
+    table = (total_table>0) == (total_table<=minimum_accuracy)
     for i in range(0, len(table)):
         for j in range(0, len(table[i])):
             if table[i][j] == True:
@@ -201,20 +203,28 @@ def add_person(rgb_table, minimum_accuracy, filename):
                 if save_original == True:
                     if os.path.exists(f"persons-original/{i+1}") == False:
                         os.mkdir(f"persons-original/{i+1}")
-                    os.rename(f"inputs/{filename}", f"persons-original/{i+1}/{len(os.listdir(f'persons/{i+1}/'))+1}-{filename}.jpg")
+                    os.rename(f"inputs/{filename}", f"persons-original/{i+1}/{len(os.listdir(f'persons/{i+1}/'))+1}-{filename}-{total_table[i][j]}.jpg")
                     return
                 else:
                     os.remove(f"inputs/{filename}")
                     return
-            
+    
     os.mkdir(f"persons/{len(os.listdir('persons/'))+1}")
-    np.save(f"persons/{len(os.listdir('persons/'))+1}/1.npy", rgb_table)
+    np.save(f"persons/{len(os.listdir('persons/'))}/1.npy", rgb_table)
     if save_original == True:
-        os.rename(f"inputs/{filename}", f"persons-original/{len(os.listdir('persons/'))+1}/1-{filename}.npy")
+        if os.path.exists(f"persons-original/{len(os.listdir('persons-original/'))+1}") == False:
+                os.mkdir(f"persons-original/{len(os.listdir('persons-original/'))+1}")
+        os.rename(f"inputs/{filename}", f"persons-original/{len(os.listdir('persons/'))}/1-{filename}.jpg")
     else:
         os.remove(f"inputs/{filename}")
 
 
+def check_min(img_name, average_rgb):
+    for i in range(0, len(minumim_parts_index)):
+                if average_rgb[minumim_parts_index[i]][3] <= minimum_pixels:
+                    os.rename(f"inputs/{img_name}", f"wrong-data/{img_name[:-4]}.jpg")
+                    return False
+    return True
 
 
 def main():
@@ -248,7 +258,6 @@ def main():
     ])
     dataset = SimpleFolderDataset(root=args.input_dir, input_size=input_size, transform=transform)
     dataloader = DataLoader(dataset)
-
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
     palette = get_palette(num_classes)
@@ -263,7 +272,6 @@ def main():
             s = meta['scale'].numpy()[0]
             w = meta['width'].numpy()[0]
             h = meta['height'].numpy()[0]
-            print(img_name)
             output = model(image.cpu())
             upsample = torch.nn.Upsample(size=input_size, mode='bilinear', align_corners=True)
             upsample_output = upsample(output[0][-1][0].unsqueeze(0))
@@ -272,22 +280,25 @@ def main():
 
             logits_result = transform_logits(upsample_output.data.cpu().numpy(), c, s, w, h, input_size=input_size)
             parsing_result = np.argmax(logits_result, axis=2)
-            if np.all(np.isin(minumim_parts_index, parsing_result)) == False:
-                continue # Skip images that don't have all the minimum parts
+            isin = np.isin(minumim_parts_index, parsing_result)
+            
             parsing_result_path = os.path.join(args.output_dir, img_name[:-4] + '.png')
             output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
             output_img.putpalette(palette)
+           
 
             average_rgb = get_average_rgb_per_class(np.asarray(Image.open(f"/home/daan/Huiswerk/Jaar 3/r2d2/research-groep-6/human-parsing/inputs/{img_name}")), np.asarray(parsing_result, dtype=np.uint8), 18, label)
             output_img.save(parsing_result_path)
+            if np.all(isin) == False:
+                os.rename(f"inputs/{img_name}", f"wrong-data/{img_name[:-4]}-{isin}-error.jpg")
+                continue # Skip images that don't have all the minimum parts
+            if check_min(img_name, average_rgb) == False:
+                continue
             i+=1
             if args.logits:
                 logits_result_path = os.path.join(args.output_dir, img_name[:-4] + '.npy')
                 np.save(logits_result_path, logits_result)
-            print("test")
-            add_person(average_rgb, 6.0, img_name)
-    # compare_rgb(average_rgb_table, average_rgb_table[2])
-    # print_table(compare_rgb(average_rgb_table, average_rgb_table[2]), label)
+            add_person(average_rgb, 5.0, img_name)
     
 
 if __name__ == '__main__':
