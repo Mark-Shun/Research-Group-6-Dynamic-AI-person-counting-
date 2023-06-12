@@ -91,6 +91,7 @@ def run(
     
     if feature_extraction:
         compare.testAlgorithms(str(feature_extraction))
+        exit()
 
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images

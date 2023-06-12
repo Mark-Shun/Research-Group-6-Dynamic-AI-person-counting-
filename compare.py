@@ -289,6 +289,8 @@ def testAlgorithms(directory: str):
         print('\n\n', infoFAST)
         print(infoSIFT)
         print(infoORB, '\n\n')
+        data.append("folder: ")
+        data.append(map)
         data.append(infoFAST)
         data.append(infoSIFT)
         data.append(infoORB)
