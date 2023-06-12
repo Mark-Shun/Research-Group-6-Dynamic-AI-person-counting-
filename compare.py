@@ -10,6 +10,9 @@ percentageSIFT = []
 percentageORB = []
 percentageBRIEF = []
 
+distance_threshold = 40
+lengthMatches = -1
+
 
 def computeNumbers(arr, name=''):
     sum = np.array(arr).sum()
@@ -47,9 +50,8 @@ def FAST(image1, image2, show=True, numberOfMeasurements=None):
     matches = matcher.match(descriptors1, descriptors2)
 
     # Apply distance threshold to filter out matches
-    distance_threshold = 50
     filtered_matches = [
-        match for match in matches if match.distance < distance_threshold]
+        match for match in matches[:lengthMatches] if match.distance < distance_threshold]
 
     # Calculate match percentage
     if not len(keypoints1):
@@ -60,14 +62,14 @@ def FAST(image1, image2, show=True, numberOfMeasurements=None):
 
     # Draw matches
     matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2,
-                                    filtered_matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+                                    matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 
     # Display the matched image and match percentage
     if show:
         cv2.imshow('FAST', matched_image)
 
-    print('FAST: ', len(keypoints1), len(keypoints2), len(filtered_matches))
-    print("Match Percentage:", match_percentage)
+    # print('FAST: ', len(keypoints1), len(keypoints2), len(filtered_matches))
+    # print("Match Percentage:", match_percentage)
     percentageFAST.append(match_percentage)
 
     if numberOfMeasurements < len(percentageFAST):
@@ -84,7 +86,7 @@ def SIFT(image1, image2, show=True, numberOfMeasurements=None):
     image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
     # Create a SIFT object
-    sift = cv2.SIFT_create()
+    sift = cv2.SIFT_create(nfeatures=2000, nOctaveLayers=8, edgeThreshold=0)
 
     # Detect keypoints and compute descriptors for the images
     keypoints1, descriptors1 = sift.detectAndCompute(image1, None)
@@ -100,27 +102,26 @@ def SIFT(image1, image2, show=True, numberOfMeasurements=None):
     matches = sorted(matches, key=lambda x: x.distance)
 
     # Draw the top 10 matches
-    distance_threshold = 0
-    filtered_matches = [match for match in matches if match.distance < distance_threshold]
-    
+    filtered_matches = [match for match in matches[:lengthMatches]
+                        if match.distance < distance_threshold]
+
     matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2,
-                                    filtered_matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+                                    matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 
     # Apply distance threshold to filter out matches
 
-
     # Calculate match percentage
-    print('SIFT: ', len(keypoints1), len(keypoints2), len(filtered_matches))
+    # print('SIFT: ', len(keypoints1), len(keypoints2), len(filtered_matches))
     if not len(keypoints1):
-        match_percentage = 50
+        match_percentage = 0
 
     else:
-        match_percentage = len(filtered_matches) / len(keypoints1) * 100
+        match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
     if show:
         cv2.imshow('SIFT', matched_image)
 
-    print("Match Percentage:", match_percentage)
+    # print("Match Percentage:", match_percentage)
     percentageSIFT.append(match_percentage)
 
     if numberOfMeasurements < len(percentageSIFT):
@@ -136,11 +137,8 @@ def ORB(image1, image2, show=True, numberOfMeasurements=None):
     image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
     image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
-<<<<<<< Updated upstream
-    orb = cv2.ORB_create(nfeatures=2000, nlevels=8, scaleFactor=1.2, edgeThreshold=10, patchSize=31)
-=======
-    orb = cv2.ORB_create()
->>>>>>> Stashed changes
+    orb = cv2.ORB_create(nfeatures=2000, nlevels=8,
+                         scaleFactor=1.2, edgeThreshold=10, patchSize=31)
 
     # Detect and compute keypoints and descriptors for both images
     keypoints1, descriptors1 = orb.detectAndCompute(image1, None)
@@ -156,25 +154,26 @@ def ORB(image1, image2, show=True, numberOfMeasurements=None):
     matches = sorted(matches, key=lambda x: x.distance)
 
     # Draw top 10 matches
-    matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2,
+                                    matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 
     # Apply distance threshold to filter out matches
-    distance_threshold = 50
     filtered_matches = [
-        match for match in matches if match.distance < distance_threshold]
+        match for match in matches[:lengthMatches] if match.distance < distance_threshold]
 
     # Calculate match percentage
-    print(len(keypoints1))
     if not len(keypoints1):
         match_percentage = 0
 
     else:
         match_percentage = (len(filtered_matches) / len(keypoints1)) * 100
 
+    # print('ORB: ', len(keypoints1), len(keypoints2), len(filtered_matches))
+
     if show:
         cv2.imshow('ORB', matched_image)
 
-    print("Match Percentage:", match_percentage)
+    # print("Match Percentage:", match_percentage)
     percentageORB.append(match_percentage)
 
     if numberOfMeasurements < len(percentageORB):
@@ -208,7 +207,7 @@ def BRIEF(image1, image2, show=True, numberOfMeasurements=None):
 
     # Draw the top matches
     matched_image = cv2.drawMatches(image1, keypoints1, image2, keypoints2,
-                                    matches[:10], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+                                    matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 
     distance_threshold = 50
     filtered_matches = [
@@ -262,39 +261,48 @@ def showHistogram(data1=None, data2=None, data3=None):
     return
 
 
-def testAlgorithms():
-    directory = 'runs/track/exp124/crops-seg/videoplayback/person'
-    firstPicture = cv2.imread('runs/track/exp124/crops-seg/videoplayback/person/1/videoplayback-seg17.jpg')
-
+def testAlgorithms(directory: str):
+    global percentageFAST, percentageSIFT, percentageORB
+    data = []
     for map in os.listdir(directory):
-        for picture in os.listdir(directory + '/' + map):
-            path = os.path.join(directory, map, picture)
+        percentageFAST.clear()
+        percentageSIFT.clear()
+        percentageORB.clear()
+        print('folder: ', map, '\n\n')
+        for fileName1 in os.listdir(directory + '/' + map):
+            for fileName2 in os.listdir(directory + '/' + map):
+                if fileName1[:3] == fileName2[:3]:
+                    continue
+                print(fileName1, fileName2)
+                image1 = np.array(Image.open(
+                    directory + '/' + map + '/' + fileName1))
+                image2 = np.array(Image.open(
+                    directory + '/' + map + '/' + fileName2))
 
-            print(path)
-            image = Image.open(path)
-            imageArr = np.array(image)
+                imageFAST, infoFAST, dataFAST = FAST(
+                    image1, image2, numberOfMeasurements=1, show=False)
+                imageSIFT, infoSIFT, dataSIFT = SIFT(
+                    image1, image2, numberOfMeasurements=1, show=False)
+                imageORB, infoORB, dataORB = ORB(
+                    image1, image2, numberOfMeasurements=1, show=False)
 
-            imageFAST, infoFAST, dataFAST = FAST(
-                firstPicture, imageArr, numberOfMeasurements=10, show=False)
-            imageSIFT, infoSIFT, dataSIFT = SIFT(
-                firstPicture, imageArr, numberOfMeasurements=10, show=False)
-            # imageORB, infoORB, dataORB = ORB( firstPicture, firstPicture, numberOfMeasurements=10, show=False)
+        print('\n\n', infoFAST)
+        print(infoSIFT)
+        print(infoORB, '\n\n')
+        data.append(infoFAST)
+        data.append(infoSIFT)
+        data.append(infoORB)
+        data.append('\n\n')
 
-            imageFASTResized = cv2.resize(imageFAST, (960, 360))
-            imageSIFTResized = cv2.resize(imageSIFT, (960, 360))
-            # imageORBResized = cv2.resize(imageORB, (640, 240))
-
-            combined_image = np.vstack(
-                (imageFASTResized, imageSIFTResized))
-            cv2.putText(combined_image, infoFAST, org=(
-                0, 10), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
-            cv2.putText(combined_image, infoSIFT, org=(
-                0, 970), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
-            # cv2.putText(combined_image, infoORB, org=( 0, 490), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=(0, 0, 255), thickness=1)
-            cv2.imshow('matching algorythms', combined_image)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+    for str in data:
+        print(str)
 
 
 if __name__ == '__main__':
-    testAlgorithms()
+    import time
+
+    begin = time.time()
+    testAlgorithms('dataset')
+    end = time.time() - begin
+
+    print('time = ', end)
