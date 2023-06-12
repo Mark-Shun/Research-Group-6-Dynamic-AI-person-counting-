@@ -61,6 +61,22 @@ minumim_parts_index = [2,4,6,10,11,14]
 minumim_parts_label = [dataset_settings['atr']['label'][2], dataset_settings['atr']['label'][4], dataset_settings['atr']['label'][6], dataset_settings['atr']['label'][10], dataset_settings['atr']['label'][11], dataset_settings['atr']['label'][14]]
 minimum_pixels = 500
 
+import time
+
+def timeit(f):
+
+    def timed(*args, **kw):
+
+        ts = time.time()
+        result = f(*args, **kw)
+        te = time.time()
+
+        print( 'func:%r took: %2.4f sec' % \
+            (f.__name__, te-ts))
+        return result
+
+    return timed
+@timeit
 def get_arguments():
     """Parse all the arguments provided from the CLI.
     Returns:
@@ -77,7 +93,7 @@ def get_arguments():
 
     return parser.parse_args()
 
-
+@timeit
 def get_palette(num_cls):
     """ Returns the color map for visualizing the segmentation mask.
     Args:
@@ -101,7 +117,7 @@ def get_palette(num_cls):
             lab >>= 3
     return palette
 
-
+@timeit
 def get_average_rgb_per_class(original_img, mask_img, amount_classes, label):
     """ Returns the average rgb per class
     Args: 
@@ -138,6 +154,7 @@ Args:
 Returns:
     The difference between the average rgb of the image and the average rgb of the other image for each class
 """
+@timeit
 def compare_rgb(rgb_table, rgb_to_compare):
     result = np.zeros((rgb_table.shape[0],3 ))
     for i in range(0, rgb_table.shape[0]):
@@ -152,6 +169,7 @@ Returns:
     The total rgb of the image of the minimum parts
 
 """
+@timeit
 def calculate_total(table):
     total = 0
     for row_index, row in enumerate(table):
@@ -183,6 +201,7 @@ def  print_table(table, label):
 Args:
     The table with the average rgb per class of the image to compare with
 """
+@timeit
 def compare_persons(rgb_table):
     total_table = np.zeros((len(os.listdir("persons")), 20))
     for foldernames in os.listdir("persons"):
@@ -191,6 +210,7 @@ def compare_persons(rgb_table):
             total_table[int(foldernames)-1][int(filenames[:-4])-1] = calculate_total(compare_rgb(rgb_table, average_rgb))
     return total_table
 
+@timeit
 def add_person(rgb_table, minimum_accuracy, filename):
     total_table = compare_persons(rgb_table)
     table = (total_table>0) == (total_table<=minimum_accuracy)
@@ -214,12 +234,16 @@ def add_person(rgb_table, minimum_accuracy, filename):
     if save_original == True:
         if os.path.exists(f"persons-original/{len(os.listdir('persons-original/'))+1}") == False:
                 os.mkdir(f"persons-original/{len(os.listdir('persons-original/'))+1}")
-        os.rename(f"inputs/{filename}", f"persons-original/{len(os.listdir('persons/'))}/1-{filename}.jpg")
+        os.rename(f"inputs/{filename}", f"persons-original/{len(os.listdir('persons/'))}/1-{filename}")
     else:
         os.remove(f"inputs/{filename}")
 
-
-def check_min(img_name, average_rgb):
+@timeit
+def check_min(img_name, average_rgb, parsing_result):
+    isin = np.isin(minumim_parts_index, parsing_result)
+    if np.all(isin) == False:
+            os.rename(f"inputs/{img_name}", f"wrong-data/{img_name[:-4]}-{isin}-error.jpg")
+            return False # Skip images that don't have all the minimum parts
     for i in range(0, len(minumim_parts_index)):
                 if average_rgb[minumim_parts_index[i]][3] <= minimum_pixels:
                     os.rename(f"inputs/{img_name}", f"wrong-data/{img_name[:-4]}.jpg")
@@ -280,20 +304,20 @@ def main():
 
             logits_result = transform_logits(upsample_output.data.cpu().numpy(), c, s, w, h, input_size=input_size)
             parsing_result = np.argmax(logits_result, axis=2)
-            isin = np.isin(minumim_parts_index, parsing_result)
+            average_rgb = get_average_rgb_per_class(np.asarray(Image.open(f"inputs/{img_name}")), np.asarray(parsing_result, dtype=np.uint8), 18, label)
+            if check_min(img_name, average_rgb, parsing_result) == False:
+                continue
             
             parsing_result_path = os.path.join(args.output_dir, img_name[:-4] + '.png')
             output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
+            
             output_img.putpalette(palette)
            
 
-            average_rgb = get_average_rgb_per_class(np.asarray(Image.open(f"/home/daan/Huiswerk/Jaar 3/r2d2/research-groep-6/human-parsing/inputs/{img_name}")), np.asarray(parsing_result, dtype=np.uint8), 18, label)
+            
             output_img.save(parsing_result_path)
-            if np.all(isin) == False:
-                os.rename(f"inputs/{img_name}", f"wrong-data/{img_name[:-4]}-{isin}-error.jpg")
-                continue # Skip images that don't have all the minimum parts
-            if check_min(img_name, average_rgb) == False:
-                continue
+           
+            
             i+=1
             if args.logits:
                 logits_result_path = os.path.join(args.output_dir, img_name[:-4] + '.npy')
