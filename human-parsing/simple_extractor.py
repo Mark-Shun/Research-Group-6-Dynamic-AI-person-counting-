@@ -76,7 +76,6 @@ def timeit(f):
         return result
 
     return timed
-@timeit
 def get_arguments():
     """Parse all the arguments provided from the CLI.
     Returns:
@@ -93,7 +92,6 @@ def get_arguments():
 
     return parser.parse_args()
 
-@timeit
 def get_palette(num_cls):
     """ Returns the color map for visualizing the segmentation mask.
     Args:
@@ -117,7 +115,6 @@ def get_palette(num_cls):
             lab >>= 3
     return palette
 
-@timeit
 def get_average_rgb_per_class(original_img, mask_img, amount_classes, label):
     """ Returns the average rgb per class
     Args: 
@@ -154,7 +151,6 @@ Args:
 Returns:
     The difference between the average rgb of the image and the average rgb of the other image for each class
 """
-@timeit
 def compare_rgb(rgb_table, rgb_to_compare):
     result = np.zeros((rgb_table.shape[0],3 ))
     for i in range(0, rgb_table.shape[0]):
@@ -169,7 +165,6 @@ Returns:
     The total rgb of the image of the minimum parts
 
 """
-@timeit
 def calculate_total(table):
     total = 0
     for row_index, row in enumerate(table):
@@ -201,16 +196,14 @@ def  print_table(table, label):
 Args:
     The table with the average rgb per class of the image to compare with
 """
-@timeit
 def compare_persons(rgb_table):
-    total_table = np.zeros((len(os.listdir("persons")), 20))
+    total_table = np.zeros((len(os.listdir("persons")), 50))
     for foldernames in os.listdir("persons"):
         for filenames in os.listdir("persons/"+foldernames):
             average_rgb = np.load(f"persons/{foldernames}/{filenames}")
-            total_table[int(foldernames)-1][int(filenames[:-4])-1] = calculate_total(compare_rgb(rgb_table, average_rgb))
+            total_table[int(foldernames)-1][int(filenames[0])-1] = calculate_total(compare_rgb(rgb_table, average_rgb))
     return total_table
 
-@timeit
 def add_person(rgb_table, minimum_accuracy, filename):
     total_table = compare_persons(rgb_table)
     table = (total_table>0) == (total_table<=minimum_accuracy)
@@ -219,7 +212,7 @@ def add_person(rgb_table, minimum_accuracy, filename):
             if table[i][j] == True:
                 if os.path.exists(f"persons/{i+1}") == False:
                     os.mkdir(f"persons/{i+1}")
-                np.save(f"persons/{i+1}/{len(os.listdir(f'persons/{i+1}/'))+1}.npy", rgb_table)
+                np.save(f"persons/{i+1}/{filename[:-4]}-{(len(os.listdir(f'persons/{i+1}/'))+1)}.npy", rgb_table)
                 if save_original == True:
                     if os.path.exists(f"persons-original/{i+1}") == False:
                         os.mkdir(f"persons-original/{i+1}")
@@ -230,7 +223,7 @@ def add_person(rgb_table, minimum_accuracy, filename):
                     return
     
     os.mkdir(f"persons/{len(os.listdir('persons/'))+1}")
-    np.save(f"persons/{len(os.listdir('persons/'))}/1.npy", rgb_table)
+    np.save(f"persons/{len(os.listdir('persons/'))}/{filename[:-4]}-1.npy", rgb_table)
     if save_original == True:
         if os.path.exists(f"persons-original/{len(os.listdir('persons-original/'))+1}") == False:
                 os.mkdir(f"persons-original/{len(os.listdir('persons-original/'))+1}")
@@ -238,7 +231,6 @@ def add_person(rgb_table, minimum_accuracy, filename):
     else:
         os.remove(f"inputs/{filename}")
 
-@timeit
 def check_min(img_name, average_rgb, parsing_result):
     isin = np.isin(minumim_parts_index, parsing_result)
     if np.all(isin) == False:
@@ -322,7 +314,7 @@ def main():
             if args.logits:
                 logits_result_path = os.path.join(args.output_dir, img_name[:-4] + '.npy')
                 np.save(logits_result_path, logits_result)
-            add_person(average_rgb, 5.0, img_name)
+            add_person(average_rgb, 7.0, img_name)
     
 
 if __name__ == '__main__':
