@@ -8,7 +8,7 @@ Using the specific segmentation model of yolov8 we use the resulting mask and bo
 The following line is an example of all the flags that can be utilized for the project, **(!)** decide yourself which values and whether or not you want to use a certain flag.
 Flags marked with * are used in specific circumstances
 ```
-python track.py --device 0 --source video.mp4 --yolo-weights yolov8m-seg.pt --classes 0 --conf-thres 0.3 *--save-crop* --save-seg --seg-perc 0.4 --max-pix 1000 --retina-masks *--panorama images/backyard2*
+python track.py --device 0 --source video.mp4 --yolo-weights yolov8m-seg.pt --classes 0 --conf-thres 0.3 *--save-crop* --save-seg --seg-perc 0.4 --max-pix 10000 --retina-masks *--panorama images/backyard2*
 ```
 - The device flag indicates whether you want to run the file on the CPU or GPU. (For GPU indicate the specific device number i.e. 0 or 1 etc...)
 - The yolo-weights flag indicates which specific model you want to use, take a look at the following page for an overview: https://docs.ultralytics.com/models/?h=models#models
