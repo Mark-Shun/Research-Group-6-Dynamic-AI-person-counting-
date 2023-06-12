@@ -297,6 +297,8 @@ def main():
             logits_result = transform_logits(upsample_output.data.cpu().numpy(), c, s, w, h, input_size=input_size)
             parsing_result = np.argmax(logits_result, axis=2)
             average_rgb = get_average_rgb_per_class(np.asarray(Image.open(f"inputs/{img_name}")), np.asarray(parsing_result, dtype=np.uint8), 18, label)
+            np.save(f"average-rgb/{img_name[:-4]}.npy", average_rgb)
+            continue
             if check_min(img_name, average_rgb, parsing_result) == False:
                 continue
             
