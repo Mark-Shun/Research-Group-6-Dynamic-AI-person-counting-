@@ -278,6 +278,7 @@ def main():
         os.makedirs(args.output_dir)
     palette = get_palette(num_classes)
     i = 0
+    numpy_array = []
     with torch.no_grad():
 
         for idx, batch in enumerate(tqdm(dataloader)):
@@ -296,11 +297,17 @@ def main():
 
             logits_result = transform_logits(upsample_output.data.cpu().numpy(), c, s, w, h, input_size=input_size)
             parsing_result = np.argmax(logits_result, axis=2)
-            average_rgb = get_average_rgb_per_class(np.asarray(Image.open(f"inputs/{img_name}")), np.asarray(parsing_result, dtype=np.uint8), 18, label)
-            np.save(f"average-rgb/{img_name[:-4]}.npy", average_rgb)
-            continue
-            if check_min(img_name, average_rgb, parsing_result) == False:
-                continue
+            average_rgb = np.expand_dims(get_average_rgb_per_class(np.asarray(Image.open(f"inputs/{img_name}")), np.asarray(parsing_result, dtype=np.uint8), 18, label),axis=0)
+            if idx == 0:
+                numpy_array = average_rgb
+            else:
+                numpy_array = np.append(numpy_array, average_rgb, axis=0)
+            if idx % 100 == 0:
+                np.save(f"average-rgb/{idx}-checkpoint.npy", average_rgb)
+            # continue
+    
+            # if check_min(img_name, average_rgb, parsing_result) == False:
+            #     continue
             
             parsing_result_path = os.path.join(args.output_dir, img_name[:-4] + '.png')
             output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
@@ -316,8 +323,11 @@ def main():
             if args.logits:
                 logits_result_path = os.path.join(args.output_dir, img_name[:-4] + '.npy')
                 np.save(logits_result_path, logits_result)
-            add_person(average_rgb, 7.0, img_name)
+            # add_person(average_rgb, 7.0, img_name)
+
+    np.save(f"average-rgb/final.npy", numpy_array)
     
 
 if __name__ == '__main__':
     main()
+
