@@ -278,9 +278,14 @@ def main():
     palette = get_palette(num_classes)
     i = 0
     numpy_array = []
+
+    #Load pickle for image matching
+    with open("imgs.pkl", "rb") as img_path_file:
+            imgs_paths = pickle.load(img_path_file)
+
     with torch.no_grad():
         #Make list of persons
-        persons = []
+        persons = {}
 
         for idx, batch in enumerate(tqdm(dataloader)):
             
@@ -319,22 +324,23 @@ def main():
                 person["parts"] += [mean_body_part_color]
             #Save parts to person
             person["parts"] = np.array(person["parts"])
-            persons += [person]
+            persons[img_name] = person
   
     results = []
     # Calc matching percent
-    for person1 in persons:
-        # Match all imgs with all imgs
-        for person2 in persons:
-            # Check for same img
-            if person1["name"] == person2["name"]:
-                continue
-            # Is the same person
-            same_person = person1["id"] == person2["id"]
-            #Calculate perc with Euclidean Distance
-            perc = np.linalg.norm(person1["parts"].flatten() - person2["parts"].flatten())/255
-            #Save result
-            results += [[same_person, perc]]
+    # Match images from given images
+    for img_match in imgs_paths:
+        person1 = persons[img_match[0].split("/")[1]]
+        person2 = persons[img_match[1].split("/")[1]]
+        # Check for same img
+        if person1["name"] == person2["name"]:
+            continue
+        # Is the same person
+        same_person = person1["id"] == person2["id"]
+        #Calculate perc with Euclidean Distance
+        perc = np.linalg.norm(person1["parts"].flatten() - person2["parts"].flatten())/255
+        #Save result
+        results += [[same_person, perc]]
     #Save Pickle        
     with open("results.pkl", "wb") as result_file:
         pickle.dump(results, result_file)
