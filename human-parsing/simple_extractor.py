@@ -57,8 +57,8 @@ dataset_settings = {
         'label': ['Background', 'Head', 'Torso', 'Upper Arms', 'Lower Arms', 'Upper Legs', 'Lower Legs'],
     }
 }
-minumim_parts_index = [2,4,6,10,11,14]
-minumim_parts_label = [dataset_settings['atr']['label'][2], dataset_settings['atr']['label'][4], dataset_settings['atr']['label'][6], dataset_settings['atr']['label'][10], dataset_settings['atr']['label'][11], dataset_settings['atr']['label'][14]]
+minumim_parts_index = [2,4,6,11,14]
+minumim_parts_label = [dataset_settings['atr']['label'][2], dataset_settings['atr']['label'][4], dataset_settings['atr']['label'][6], dataset_settings['atr']['label'][11], dataset_settings['atr']['label'][14]]
 minimum_pixels = 500
 
 import time
@@ -115,14 +115,15 @@ def get_palette(num_cls):
             lab >>= 3
     return palette
 
-def get_average_rgb_per_class(original_img, mask_img, amount_classes, label):
+def get_average_rgb_per_class(original_img, mask_img, amount_classes, label, img_name):
     """ Returns the average rgb per class
     Args: 
         The original image, the mask image, the amount of classes and the label
     Returns: 
         The average rgb per class in a 2d array with the following format: [r,g,b,amount_of_pixels] for each class
     """
-    average_rgb = np.zeros((amount_classes, 4))
+    average_rgb = np.zeros((amount_classes, 5))
+    average_rgb[0][4] = img_name[0]
     for i in range(0, mask_img.shape[0]):
         for j in range(0, mask_img.shape[1]):
                 if mask_img[i][j] >= 1: # 0 is background so we skip it
@@ -236,10 +237,6 @@ def check_min(img_name, average_rgb, parsing_result):
     if np.all(isin) == False:
             os.rename(f"inputs/{img_name}", f"wrong-data/{img_name[:-4]}-{isin}-error.jpg")
             return False # Skip images that don't have all the minimum parts
-    for i in range(0, len(minumim_parts_index)):
-                if average_rgb[minumim_parts_index[i]][3] <= minimum_pixels:
-                    os.rename(f"inputs/{img_name}", f"wrong-data/{img_name[:-4]}.jpg")
-                    return False
     return True
 
 
@@ -297,17 +294,20 @@ def main():
 
             logits_result = transform_logits(upsample_output.data.cpu().numpy(), c, s, w, h, input_size=input_size)
             parsing_result = np.argmax(logits_result, axis=2)
-            average_rgb = np.expand_dims(get_average_rgb_per_class(np.asarray(Image.open(f"inputs/{img_name}")), np.asarray(parsing_result, dtype=np.uint8), 18, label),axis=0)
+            average_rgb = np.expand_dims(get_average_rgb_per_class(np.asarray(Image.open(f"inputs/{img_name}")), np.asarray(parsing_result, dtype=np.uint8), 18, label, img_name),axis=0)
             if idx == 0:
                 numpy_array = average_rgb
+            if idx == 6 or idx == 64:
+                print(img_name)
+
             else:
                 numpy_array = np.append(numpy_array, average_rgb, axis=0)
             if idx % 100 == 0:
                 np.save(f"average-rgb/{idx}-checkpoint.npy", average_rgb)
             # continue
     
-            # if check_min(img_name, average_rgb, parsing_result) == False:
-            #     continue
+            if check_min(img_name, average_rgb, parsing_result) == False:
+                print(img_name)
             
             parsing_result_path = os.path.join(args.output_dir, img_name[:-4] + '.png')
             output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
@@ -330,4 +330,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
