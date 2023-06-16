@@ -23,12 +23,14 @@ import torch
 import argparse
 import numpy as np
 from PIL import Image
+from colormath.color_objects import sRGBColor, LabColor
+from colormath.color_conversions import convert_color
+from colormath.color_diff import delta_e_cie2000
 from tqdm import tqdm
 import shutil
-
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
-
+import pickle
 import networks
 from utils.transforms import transform_logits
 from datasets.simple_extractor_dataset import SimpleFolderDataset
@@ -277,6 +279,8 @@ def main():
     i = 0
     numpy_array = []
     with torch.no_grad():
+        #Make list of persons
+        persons = []
 
         for idx, batch in enumerate(tqdm(dataloader)):
             
@@ -294,38 +298,77 @@ def main():
 
             logits_result = transform_logits(upsample_output.data.cpu().numpy(), c, s, w, h, input_size=input_size)
             parsing_result = np.argmax(logits_result, axis=2)
-            average_rgb = np.expand_dims(get_average_rgb_per_class(np.asarray(Image.open(f"inputs/{img_name}")), np.asarray(parsing_result, dtype=np.uint8), 18, label, img_name),axis=0)
-            if idx == 0:
-                numpy_array = average_rgb
-            if idx == 6 or idx == 64:
-                print(img_name)
 
-            else:
-                numpy_array = np.append(numpy_array, average_rgb, axis=0)
-            if idx % 100 == 0:
-                np.save(f"average-rgb/{idx}-checkpoint.npy", average_rgb)
-            # continue
+            #Check for required body parts
+            if not np.isin(minumim_parts_index,parsing_result).all():
+                print("Image is not valid: " + img_name)
+                quit()
+
+            #Person dict name and body parts
+            person = {"name": img_name, "id":img_name[0], "parts":[]}
+
+            #Get average color of all body parts
+            for body_part in minumim_parts_index:
+                #Load image
+                original_img = np.asarray(Image.open(f"inputs/{img_name}"))
+                #Find body part indexes and get original image values of body part
+                body_part_pixels = original_img[np.where(parsing_result == body_part)]
+                #Get Color average value of body part
+                mean_body_part_color = body_part_pixels.mean(axis=0)
+                #Save average color
+                person["parts"] += [mean_body_part_color]
+            #Save parts to person
+            person["parts"] = np.array(person["parts"])
+            persons += [person]
+  
+    results = []
+    # Calc matching percent
+    for person1 in persons:
+        # Match all imgs with all imgs
+        for person2 in persons:
+            # Check for same img
+            if person1["name"] == person2["name"]:
+                continue
+            # Is the same person
+            same_person = person1["id"] == person2["id"]
+            #Calculate perc with Euclidean Distance
+            perc = np.linalg.norm(person1["parts"].flatten() - person2["parts"].flatten())/255
+            #Save result
+            results += [[same_person, perc]]
+    #Save Pickle        
+    with open("results.pkl", "wb") as result_file:
+        pickle.dump(results, result_file)
+
     
-            if check_min(img_name, average_rgb, parsing_result) == False:
-                print(img_name)
-            
-            parsing_result_path = os.path.join(args.output_dir, img_name[:-4] + '.png')
-            output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
-            
-            output_img.putpalette(palette)
-           
 
+            # average_rgb = np.expand_dims(get_average_rgb_per_class(np.asarray(Image.open(f"inputs/{img_name}")), np.asarray(parsing_result, dtype=np.uint8), 18, label, img_name),axis=0)
+            # if idx == 0:
+            #     numpy_array = average_rgb
+            # if idx == 6 or idx == 64:
+            #     print(img_name)
+
+            # else:
+            #     numpy_array = np.append(numpy_array, average_rgb, axis=0)
+            # if idx % 100 == 0:
+            #     np.save(f"average-rgb/{idx}-checkpoint.npy", average_rgb)
+            # # continue
+    
+            # if check_min(img_name, average_rgb, parsing_result) == False:
+            #     print(img_name)
             
-            output_img.save(parsing_result_path)
+            # parsing_result_path = os.path.join(args.output_dir, img_name[:-4] + '.png')
+            # output_img = Image.fromarray(np.asarray(parsing_result, dtype=np.uint8))
+            # output_img.putpalette(palette)
+            # output_img.save(parsing_result_path)
            
             
-            i+=1
-            if args.logits:
-                logits_result_path = os.path.join(args.output_dir, img_name[:-4] + '.npy')
-                np.save(logits_result_path, logits_result)
-            # add_person(average_rgb, 7.0, img_name)
+            # i+=1
+            # if args.logits:
+            #     logits_result_path = os.path.join(args.output_dir, img_name[:-4] + '.npy')
+            #     np.save(logits_result_path, logits_result)
+            # # add_person(average_rgb, 7.0, img_name)
 
-    np.save(f"average-rgb/final.npy", numpy_array)
+    # np.save(f"average-rgb/final.npy", numpy_array)
     
 
 if __name__ == '__main__':
