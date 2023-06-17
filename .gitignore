@@ -134,3 +134,8 @@ runs/
 #Other
 person
 dataset
+*.pkl
+imgs
+*.jpg
+*.JPG
+*.png
